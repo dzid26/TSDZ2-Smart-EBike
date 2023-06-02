@@ -561,7 +561,7 @@ static void ebike_control_motor(void)
         }
 
         // limit target duty cycle if higher than max value
-        if (ui8_duty_cycle_target > PWM_DUTY_CYCLE_MAX) {
+        if (ui8_duty_cycle_target >= PWM_DUTY_CYCLE_MAX) {
             ui8_duty_cycle_target = PWM_DUTY_CYCLE_MAX;
         }
 		
