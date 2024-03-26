@@ -59,12 +59,10 @@
 #define CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD  0U   // software based Schmitt trigger to stop motor jitter when at resolution limits (350 at 15.625KHz)
 // Wheel speed sensor
 #define MAX_PLAUSIBLE_WHEEL_SPEED_X10				800U
-#define MIN_PLAUSIBLE_WHEEL_SPEED_X10				35U
 #define WHEEL_SPEED_COUNTER_RESET					1U
 #define WHEEL_SPEED_COUNTER_MAX						UINT16_MAX
 #define WHEEL_SPEED_TICKS_STOP						UINT16_MAX
-#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX        ((uint16_t)((uint32_t)WHEEL_PERIMETER * MOTOR_TASK_FREQ / (MAX_PLAUSIBLE_WHEEL_SPEED_X10 / 10U) * 60U / 1000U * 60U / 1000U)) //1774
-#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN        ((uint16_t)((uint32_t)WHEEL_PERIMETER * MOTOR_TASK_FREQ / (MIN_PLAUSIBLE_WHEEL_SPEED_X10 / 10U) * 60U / 1000U * 60 / 1000U)) // 40555
+#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX_SPEED        ((uint16_t)((uint32_t)WHEEL_PERIMETER * MOTOR_TASK_FREQ / (MAX_PLAUSIBLE_WHEEL_SPEED_X10 / 10U) * 60U / 1000U * 60U / 1000U))// small value - fast rotation
 
 #define PWM_DUTY_CYCLE_MAX                                        255U
 #define PWM_DUTY_CYCLE_BITS                                       8U
