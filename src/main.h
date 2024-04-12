@@ -112,17 +112,13 @@
  pedal cadence.
 */
 #define CADENCE_SENSOR_NUMBER_MAGNETS				20U
+#define CADENCE_SENSOR_STATES                       4U      // There are two hal sensors and both can be On or Off
 
-#define CADENCE_SENSOR_CALC_COUNTER_MIN                         (uint16_t)((uint32_t)MOTOR_TASK_FREQ*100U/446U)  // 3500 at 15.625KHz
-#define CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED               (uint16_t)((uint32_t)MOTOR_TASK_FREQ*10U/558U)   // 280 at 15.625KHz
-#define CADENCE_TICKS_STARTUP                                   (uint16_t)((uint32_t)MOTOR_TASK_FREQ*10U/25U)  // ui16_cadence_sensor_ticks value for startup. About 7-8 RPM (6250 at 15.625KHz)
-#define CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD  (uint16_t)((uint32_t)MOTOR_TASK_FREQ*10U/446U)   // software based Schmitt trigger to stop motor jitter when at resolution limits (350 at 15.625KHz)
+#define CADENCE_TICKS_STARTUP_RPM                   1U
 
 #define CADENCE_RPM_TICK_NUM						(MOTOR_TASK_FREQ * (60U / CADENCE_SENSOR_NUMBER_MAGNETS))
 #define CADENCE_COUNTER_RESET						1U
-#define CADENCE_COUNTER_MAX							(CADENCE_RPM_TICK_NUM + 1U)
-#define CADENCE_TICKS_STOP							CADENCE_COUNTER_MAX
-
+#define CADENCE_TICKS_STOP							(CADENCE_RPM_TICK_NUM + 1U) //add one to ensure the division with CADENCE_RPM_TICK_NUM gives 0RPM
 // Wheel speed sensor
 #define MAX_PLAUSIBLE_WHEEL_SPEED_X10				800U
 #define WHEEL_SPEED_COUNTER_RESET					1U
