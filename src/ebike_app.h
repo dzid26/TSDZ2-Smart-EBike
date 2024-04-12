@@ -20,8 +20,6 @@
 extern volatile uint8_t ui8_display_fault_code;
 extern volatile uint8_t ui8_system_state;
 
-// cadence sensor
-extern volatile uint16_t ui16_cadence_ticks_count_min_speed_adj;
 
 // Torque sensor coaster brake engaged threshold value
 extern volatile uint16_t ui16_adc_coaster_brake_threshold;

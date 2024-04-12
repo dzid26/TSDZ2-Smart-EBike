@@ -117,7 +117,6 @@ static uint16_t smooth_start_duty_cycle_target = 0;
 static uint16_t ui16_motor_speed_erps = 0;
 
 // cadence sensor
-volatile uint16_t ui16_cadence_ticks_count_min_speed_adj = CADENCE_SENSOR_CALC_COUNTER_MIN;
 static uint8_t ui8_pedal_cadence_RPM = 0;
 static uint8_t ui8_motor_deceleration = MOTOR_DECELERATION;
 
@@ -1512,15 +1511,7 @@ static void calc_wheel_speed(void)
 	Formula for calculating the cadence in RPM:
 	(1) Cadence in RPM = (60 * MOTOR_TASK_FREQ) / CADENCE_SENSOR_NUMBER_MAGNETS) / ticks
 	-------------------------------------------------------------------------------------------------*/
-static void calc_cadence(void){
-    // adjust cadence sensor ticks counter min depending on wheel speed - read in motor.c
-    ui16_cadence_ticks_count_min_speed_adj = map_ui16(ui16_wheel_speed_x10,
-            40,
-            400,
-            CADENCE_SENSOR_CALC_COUNTER_MIN,
-            CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED);
-
-    // calculate cadence in RPM
+static void calc_cadence(void){    // Calculate cadence in RPM 
 	ui8_pedal_cadence_RPM = (uint8_t)(CADENCE_RPM_TICK_NUM / ui16_cadence_sensor_ticks);
 }	
 
