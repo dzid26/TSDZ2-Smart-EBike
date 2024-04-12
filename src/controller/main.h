@@ -39,6 +39,8 @@
 
 // cadence sensor
 #define CADENCE_SENSOR_NUMBER_MAGNETS                           20U
+#define CADENCE_SENSOR_STATES                                   4U      // There are two hal sensors and both can be On or Off
+
 /*-------------------------------------------------------------------------------
  NOTE: regarding the cadence sensor
 
@@ -50,13 +52,10 @@
  transitions of the same kind it is important to adjust the calculation of
  pedal cadence.
  -------------------------------------------------------------------------------*/
-#define CADENCE_SENSOR_CALC_COUNTER_MIN             4266U  // 3500 at 15.625KHz
-#define CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED   341U  // 280 at 15.625KHz
 #define CADENCE_RPM_TICK_NUM						(MOTOR_TASK_FREQ * (60U / CADENCE_SENSOR_NUMBER_MAGNETS))
 #define CADENCE_COUNTER_RESET						1U
-#define CADENCE_COUNTER_MAX							(CADENCE_RPM_TICK_NUM + 1U)
-#define CADENCE_TICKS_STOP							CADENCE_COUNTER_MAX
-#define CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD  0U   // software based Schmitt trigger to stop motor jitter when at resolution limits (350 at 15.625KHz)
+#define CADENCE_TICKS_STOP							(CADENCE_RPM_TICK_NUM + 1U)
+
 // Wheel speed sensor
 #define MAX_PLAUSIBLE_WHEEL_SPEED_X10				800U
 #define WHEEL_SPEED_COUNTER_RESET					1U

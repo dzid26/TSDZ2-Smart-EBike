@@ -113,9 +113,7 @@ static uint16_t smooth_start_duty_cycle_target = 0;
 static uint8_t ui8_brakes_engaged = 0;
 
 // cadence sensor
-uint16_t ui16_cadence_ticks_count_min_speed_adj = CADENCE_SENSOR_CALC_COUNTER_MIN;
 static uint8_t ui8_pedal_cadence_RPM = 0;
-uint8_t ui8_pedal_cadence_fast_stop = 0;
 static uint8_t ui8_motor_deceleration = MOTOR_DECELERATION;
 
 // torque sensor
@@ -508,12 +506,6 @@ void ebike_app_init(void)
                 (uint8_t) 100,
                 (uint8_t) PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT,
                 (uint8_t) PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN);
-	
-	// set pedal cadence fast stop
-	if(ui8_motor_deceleration == 100)
-		ui8_pedal_cadence_fast_stop = 1;
-	else
-		ui8_pedal_cadence_fast_stop = 0;
 	
 	// set pedal torque per 10_bit DC_step x100 advanced
 	if((ui8_torque_sensor_calibrated)&&(m_configuration_variables.ui8_torque_sensor_adv_enabled)) {
@@ -1549,15 +1541,7 @@ static void calc_wheel_speed(void)
 	Formula for calculating the cadence in RPM:
 	(1) Cadence in RPM = (60 * MOTOR_TASK_FREQ) / CADENCE_SENSOR_NUMBER_MAGNETS) / ticks
 	-------------------------------------------------------------------------------------------------*/
-static void calc_cadence(void){
-    // adjust cadence sensor ticks counter min depending on wheel speed - read in motor.c
-    ui16_cadence_ticks_count_min_speed_adj = map_ui16(ui16_wheel_speed_x10,
-            40,
-            400,
-            CADENCE_SENSOR_CALC_COUNTER_MIN,
-            CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED);
-
-    // calculate cadence in RPM
+static void calc_cadence(void){    // Calculate cadence in RPM 
 	ui8_pedal_cadence_RPM = (uint8_t)(CADENCE_RPM_TICK_NUM / ui16_cadence_sensor_ticks);
 }	
 

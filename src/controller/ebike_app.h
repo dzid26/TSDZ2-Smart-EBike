@@ -27,10 +27,6 @@ extern volatile uint8_t ui8_system_state;
 extern volatile uint8_t ui8_riding_torque_mode;
 extern volatile uint16_t ui16_adc_pedal_torque_offset_cal;
 
-// cadence sensor
-extern uint16_t ui16_cadence_ticks_count_min_speed_adj;
-extern uint8_t ui8_pedal_cadence_fast_stop;
-
 // Torque sensor coaster brake engaged threshold value
 extern volatile uint16_t ui16_adc_coaster_brake_threshold;
 
