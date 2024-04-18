@@ -99,15 +99,41 @@
 #define K_BEMF_X1000                                        84U
 #endif
 
-// cadence
+// cadence sensor
+/*---------------------------------------------------------------------------
+ NOTE: regarding the cadence sensor
+
+ CADENCE_SENSOR_NUMBER_MAGNETS = 20, this is the number of magnets used for
+ the cadence sensor. Was validated on August 2018 by Casainho and jbalat
+
+ Cadence is calculated by counting how much time passes between two
+ transitions. Depending on if all transitions are measured or simply
+ transitions of the same kind it is important to adjust the calculation of
+ pedal cadence.
+*/
+#define CADENCE_SENSOR_NUMBER_MAGNETS				20U
+
 #define CADENCE_SENSOR_CALC_COUNTER_MIN                         (uint16_t)((uint32_t)MOTOR_TASK_FREQ*100U/446U)  // 3500 at 15.625KHz
 #define CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED               (uint16_t)((uint32_t)MOTOR_TASK_FREQ*10U/558U)   // 280 at 15.625KHz
 #define CADENCE_TICKS_STARTUP                                   (uint16_t)((uint32_t)MOTOR_TASK_FREQ*10U/25U)  // ui16_cadence_sensor_ticks value for startup. About 7-8 RPM (6250 at 15.625KHz)
 #define CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD  (uint16_t)((uint32_t)MOTOR_TASK_FREQ*10U/446U)   // software based Schmitt trigger to stop motor jitter when at resolution limits (350 at 15.625KHz)
 
+#define CADENCE_RPM_TICK_NUM						(MOTOR_TASK_FREQ * (60U / CADENCE_SENSOR_NUMBER_MAGNETS))
+#define CADENCE_COUNTER_RESET						1U
+#define CADENCE_COUNTER_MAX							(CADENCE_RPM_TICK_NUM + 1U)
+#define CADENCE_TICKS_STOP							CADENCE_COUNTER_MAX
+
 // Wheel speed sensor
-#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX				(uint16_t)((uint32_t)MOTOR_TASK_FREQ*10U/1157U)   // (135 at 15,625KHz) something like 200 m/h with a 6'' wheel
-#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN				(uint16_t)((uint32_t)MOTOR_TASK_FREQ*1000U/477U) // 32767@15625KHz could be a bigger number but will make for a slow detection of stopped wheel speed
+#define MAX_PLAUSIBLE_WHEEL_SPEED_X10				800U
+#define MIN_PLAUSIBLE_WHEEL_SPEED_X10				35U
+#define WHEEL_SPEED_COUNTER_RESET					1U
+#define WHEEL_SPEED_COUNTER_MAX						UINT16_MAX
+#define WHEEL_SPEED_TICKS_STOP						UINT16_MAX
+
+
+// Wheel speed sensor
+#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX        ((uint16_t)((uint32_t)WHEEL_PERIMETER * MOTOR_TASK_FREQ / (MAX_PLAUSIBLE_WHEEL_SPEED_X10 / 10U) * 60U / 1000U * 60U / 1000U)) //1774
+#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN        ((uint16_t)((uint32_t)WHEEL_PERIMETER * MOTOR_TASK_FREQ / (MIN_PLAUSIBLE_WHEEL_SPEED_X10 / 10U) * 60U / 1000U * 60 / 1000U)) // 40555
 
 #define PWM_DUTY_CYCLE_MAX									UINT8_MAX
 #define PWM_DUTY_CYCLE_STARTUP								30    // Initial PWM Duty Cycle at motor startup
@@ -229,20 +255,7 @@ HALL_COUNTER_OFFSET_UP:    29 -> 44
 
  ---------------------------------------------------------*/
 
-// cadence sensor
-#define CADENCE_SENSOR_NUMBER_MAGNETS				20U
-
-/*---------------------------------------------------------------------------
- NOTE: regarding the cadence sensor
-
- CADENCE_SENSOR_NUMBER_MAGNETS = 20, this is the number of magnets used for
- the cadence sensor. Was validated on August 2018 by Casainho and jbalat
-
- Cadence is calculated by counting how much time passes between two
- transitions. Depending on if all transitions are measured or simply
- transitions of the same kind it is important to adjust the calculation of
- pedal cadence.
- ---------------------------------------------------------------------------
+/* ---------------------------------------------------------------------------
 
  NOTE: regarding the torque sensor output values
 

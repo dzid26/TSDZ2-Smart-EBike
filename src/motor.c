@@ -94,10 +94,11 @@ volatile uint8_t ui8_brake_state = 0;
 
 // cadence sensor
 #define NO_PAS_REF 5
-volatile uint16_t ui16_cadence_sensor_ticks = 0;
+volatile uint16_t ui16_cadence_sensor_ticks = CADENCE_TICKS_STOP;
 static uint16_t ui16_cadence_sensor_ticks_counter_min = CADENCE_SENSOR_CALC_COUNTER_MIN;
 static uint8_t ui8_pas_state_old = 4;
-static uint16_t ui16_cadence_calc_counter, ui16_cadence_stop_counter;
+static uint16_t ui16_cadence_calc_counter = CADENCE_COUNTER_MAX;
+static uint16_t ui16_cadence_stop_counter = 0;
 static uint8_t ui8_cadence_calc_ref_state = NO_PAS_REF;
 const static uint8_t ui8_pas_old_valid_state[4] = { 0x01, 0x03, 0x00, 0x02 };
 
@@ -917,68 +918,65 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
 
         /****************************************************************************/
+
         /*
          * - New pedal start/stop detection Algorithm (by MSpider65) -
          *
          * Pedal start/stop detection uses both transitions of both PAS sensors
-         * ui8_temp stores the PAS1 and PAS2 state: bit0=PAS1,  bit1=PAS2
-         * Pedal forward ui8_temp sequence is: 0x01 -> 0x00 -> 0x02 -> 0x03 -> 0x01
+         * ui8_pas_state stores the PAS1 and PAS2 state: bit0=PAS1,  bit1=PAS2
+         * Pedal forward ui8_pas_state sequence is: 0x01 -> 0x00 -> 0x02 -> 0x03 -> 0x01
          * After a stop, the first forward transition is taken as reference transition
          * Following forward transition sets the cadence to 7RPM for immediate startup
          * Then, starting form the second reference transition, the cadence is calculated based on counter value
-         * All transitions are a reference for the stop detection counter (4 time faster stop detection):
+         * All transitions resets the stop detection counter (much faster stop detection):
          */
-        ui8_temp = 0;
-        if (PAS1__PORT->IDR & PAS1__PIN) {
-            ui8_temp |= (unsigned char)0x01;
-		}
-        if (PAS2__PORT->IDR & PAS2__PIN) {
-            ui8_temp |= (unsigned char)0x02;
-		}
-        if (ui8_temp != ui8_pas_state_old) {
-            if (ui8_pas_state_old != ui8_pas_old_valid_state[ui8_temp]) {
+
+        uint8_t ui8_pas_state = (PAS1__PORT->IDR & PAS1__PIN) | ((PAS2__PORT->IDR & PAS2__PIN) >> 6);
+
+        if (ui8_pas_state != ui8_pas_state_old) {
+            if (ui8_pas_state_old != ui8_pas_old_valid_state[ui8_pas_state]) {
                 // wrong state sequence: backward rotation
-                ui16_cadence_sensor_ticks = 0;
+                ui16_cadence_sensor_ticks = CADENCE_TICKS_STOP;
                 ui8_cadence_calc_ref_state = NO_PAS_REF;
                 goto skip_cadence;
             }
-			
+
 			ui16_cadence_sensor_ticks_counter_min = ui16_cadence_ticks_count_min_speed_adj;
-			
-            if (ui8_temp == ui8_cadence_calc_ref_state) {
+
+            if (ui8_pas_state == ui8_cadence_calc_ref_state) {
                 // ui16_cadence_calc_counter is valid for cadence calculation
                 ui16_cadence_sensor_ticks = ui16_cadence_calc_counter;
-                ui16_cadence_calc_counter = 0;
+                ui16_cadence_calc_counter = CADENCE_COUNTER_RESET;
                 // software based Schmitt trigger to stop motor jitter when at resolution limits
                 ui16_cadence_sensor_ticks_counter_min += CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD;
-            }
-			else if (ui8_cadence_calc_ref_state == NO_PAS_REF) {
+            } else if (ui8_cadence_calc_ref_state == NO_PAS_REF) {
                 // this is the new reference state for cadence calculation
-                ui8_cadence_calc_ref_state = ui8_temp;
-                ui16_cadence_calc_counter = 0;
-            }
-			else if (ui16_cadence_sensor_ticks == 0) {
-                // Waiting the second reference transition: set the cadence to 7 RPM for immediate start
+                ui8_cadence_calc_ref_state = ui8_pas_state;
+                ui16_cadence_calc_counter = CADENCE_COUNTER_RESET;
+                ui16_cadence_sensor_ticks = CADENCE_TICKS_STOP;
+            } else if (ui16_cadence_sensor_ticks == CADENCE_TICKS_STOP) {
+                // When first magnet passes through the two hal sensors we know we rotate forward, but can't calculate speed yet, so assume 1RPM
                 ui16_cadence_sensor_ticks = CADENCE_TICKS_STARTUP;
+                ui16_cadence_calc_counter = CADENCE_COUNTER_RESET;
             }
 
             skip_cadence:
             // reset the counter used to detect pedal stop
             ui16_cadence_stop_counter = 0;
             // save current PAS state
-            ui8_pas_state_old = ui8_temp;
+            ui8_pas_state_old = ui8_pas_state;
         }
 
         if (++ui16_cadence_stop_counter > ui16_cadence_sensor_ticks_counter_min) {
             // pedals stop detected
-            ui16_cadence_sensor_ticks = 0;
+            ui16_cadence_sensor_ticks = CADENCE_TICKS_STOP;
             ui16_cadence_stop_counter = 0;
             ui8_cadence_calc_ref_state = NO_PAS_REF;
-        }
-		else if (ui8_cadence_calc_ref_state != NO_PAS_REF) {
+        } else if ((ui8_cadence_calc_ref_state != NO_PAS_REF) && (ui16_cadence_calc_counter < CADENCE_COUNTER_MAX)) {
             // increment cadence tick counter
             ++ui16_cadence_calc_counter;
         }
+
 
         #ifdef TIME_DEBUG
             #ifndef __CDT_PARSER__ // avoid Eclipse syntax check

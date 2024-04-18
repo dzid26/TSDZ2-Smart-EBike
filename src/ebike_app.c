@@ -587,7 +587,7 @@ static void ebike_control_motor(void)
         motor_disable_pwm();
     }
 	else if (!ui8_motor_enabled
-			&& (ui16_motor_speed_erps < (ui16_battery_voltage_filtered_x1000 / K_BEMF_X1000)) && // only enable motor if below base speed, else something bad can happen due to high currents/regen or similar
+			&& (ui16_motor_speed_erps < (ui16_battery_voltage_filtered_x1000 / K_BEMF_X1000)) // only enable motor if below base speed, else something bad can happen due to high currents/regen or similar
 			&& (ui8_adc_battery_current_target > 0U)
 			&& (!ui8_brake_state)) {
 		ui8_motor_enabled = 1;
@@ -1510,45 +1510,23 @@ static void calc_wheel_speed(void)
 }
 
 
-static void calc_cadence(void)
-{
-    // get the cadence sensor ticks
-    uint16_t ui16_cadence_sensor_ticks_temp = ui16_cadence_sensor_ticks;
-
-    // adjust cadence sensor ticks counter min depending on wheel speed
+/*-------------------------------------------------------------------------------------------------
+	NOTE: regarding the cadence calculation
+	Cadence is calculated by counting how many ticks there are between two LOW to HIGH transitions.
+	Formula for calculating the cadence in RPM:
+	(1) Cadence in RPM = (60 * MOTOR_TASK_FREQ) / CADENCE_SENSOR_NUMBER_MAGNETS) / ticks
+	-------------------------------------------------------------------------------------------------*/
+static void calc_cadence(void){
+    // adjust cadence sensor ticks counter min depending on wheel speed - read in motor.c
     ui16_cadence_ticks_count_min_speed_adj = map_ui16(ui16_wheel_speed_x10,
             40,
             400,
             CADENCE_SENSOR_CALC_COUNTER_MIN,
             CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED);
 
-    // calculate cadence in RPM and avoid zero division
-    // !!!warning if MOTOR_TASK_FREQ > 21845
-    if (ui16_cadence_sensor_ticks_temp > 0U) {
-        ui8_pedal_cadence_RPM = (uint8_t)((MOTOR_TASK_FREQ * 3U) / ui16_cadence_sensor_ticks_temp);
-		
-		if (ui8_pedal_cadence_RPM > 120) {
-			ui8_pedal_cadence_RPM = 120;
-		}
-	}
-	else {
-        ui8_pedal_cadence_RPM = 0;
-	}
-	
-	/*-------------------------------------------------------------------------------------------------
-
-     NOTE: regarding the cadence calculation
-
-     Cadence is calculated by counting how many ticks there are between two LOW to HIGH transitions.
-
-     Formula for calculating the cadence in RPM:
-
-     (1) Cadence in RPM = (60 * MOTOR_TASK_FREQ) / CADENCE_SENSOR_NUMBER_MAGNETS) / ticks
-
-     (2) Cadence in RPM = (MOTOR_TASK_FREQ * 3) / ticks
-
-     -------------------------------------------------------------------------------------------------*/
-}
+    // calculate cadence in RPM
+	ui8_pedal_cadence_RPM = (uint8_t)(CADENCE_RPM_TICK_NUM / ui16_cadence_sensor_ticks);
+}	
 
 
 void get_battery_voltage(void)
