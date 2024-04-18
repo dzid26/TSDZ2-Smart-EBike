@@ -37,15 +37,34 @@
 
 #define MOTOR_SPEED_FIELD_WEAKENING_MIN          				300		// ERPS
 
-// cadence
-#define CADENCE_SENSOR_CALC_COUNTER_MIN                         4266  // 3500 at 15.625KHz
-#define CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED               341  // 280 at 15.625KHz
-#define CADENCE_TICKS_STARTUP                                   7618  // ui16_cadence_sensor_ticks value for startup. About 7-8 RPM (6250 at 15.625KHz)
-#define CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD  0   // software based Schmitt trigger to stop motor jitter when at resolution limits (350 at 15.625KHz)
-// Wheel speed sensor
-#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX                    165   // (135 at 15,625KHz) something like 200 m/h with a 6'' wheel
-#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN                    39976 // could be a bigger number but will make for a slow detection of stopped wheel speed
+// cadence sensor
+#define CADENCE_SENSOR_NUMBER_MAGNETS                           20U
+/*-------------------------------------------------------------------------------
+ NOTE: regarding the cadence sensor
 
+ CADENCE_SENSOR_NUMBER_MAGNETS = 20, this is the number of magnets used for
+ the cadence sensor. Was validated on August 2018 by Casainho and jbalat
+
+ Cadence is calculated by counting how much time passes between two
+ transitions. Depending on if all transitions are measured or simply
+ transitions of the same kind it is important to adjust the calculation of
+ pedal cadence.
+ -------------------------------------------------------------------------------*/
+#define CADENCE_SENSOR_CALC_COUNTER_MIN             4266U  // 3500 at 15.625KHz
+#define CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED   341U  // 280 at 15.625KHz
+#define CADENCE_RPM_TICK_NUM						(MOTOR_TASK_FREQ * (60U / CADENCE_SENSOR_NUMBER_MAGNETS))
+#define CADENCE_COUNTER_RESET						1U
+#define CADENCE_COUNTER_MAX							(CADENCE_RPM_TICK_NUM + 1U)
+#define CADENCE_TICKS_STOP							CADENCE_COUNTER_MAX
+#define CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD  0U   // software based Schmitt trigger to stop motor jitter when at resolution limits (350 at 15.625KHz)
+// Wheel speed sensor
+#define MAX_PLAUSIBLE_WHEEL_SPEED_X10				800U
+#define MIN_PLAUSIBLE_WHEEL_SPEED_X10				35U
+#define WHEEL_SPEED_COUNTER_RESET					1U
+#define WHEEL_SPEED_COUNTER_MAX						UINT16_MAX
+#define WHEEL_SPEED_TICKS_STOP						UINT16_MAX
+#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX        ((uint16_t)((uint32_t)WHEEL_PERIMETER * MOTOR_TASK_FREQ / (MAX_PLAUSIBLE_WHEEL_SPEED_X10 / 10U) * 60U / 1000U * 60U / 1000U)) //1774
+#define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN        ((uint16_t)((uint32_t)WHEEL_PERIMETER * MOTOR_TASK_FREQ / (MIN_PLAUSIBLE_WHEEL_SPEED_X10 / 10U) * 60U / 1000U * 60 / 1000U)) // 40555
 
 #define PWM_DUTY_CYCLE_MAX                                        255U
 #define PWM_DUTY_CYCLE_BITS                                       8U
@@ -168,20 +187,6 @@
 
  ---------------------------------------------------------*/
 
-// cadence sensor
-#define CADENCE_SENSOR_NUMBER_MAGNETS                           20U
-
-/*-------------------------------------------------------------------------------
- NOTE: regarding the cadence sensor
-
- CADENCE_SENSOR_NUMBER_MAGNETS = 20, this is the number of magnets used for
- the cadence sensor. Was validated on August 2018 by Casainho and jbalat
-
- Cadence is calculated by counting how much time passes between two
- transitions. Depending on if all transitions are measured or simply
- transitions of the same kind it is important to adjust the calculation of
- pedal cadence.
- -------------------------------------------------------------------------------*/
 
 
 // default values

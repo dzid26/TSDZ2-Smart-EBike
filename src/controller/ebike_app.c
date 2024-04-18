@@ -1548,43 +1548,23 @@ static void calc_wheel_speed(void)
 }
 
 
-static void calc_cadence(void)
-{
-    // get the cadence sensor ticks
-    uint16_t ui16_cadence_sensor_ticks_temp = ui16_cadence_sensor_ticks;
-
-    // adjust cadence sensor ticks counter min depending on wheel speed
+/*-------------------------------------------------------------------------------------------------
+	NOTE: regarding the cadence calculation
+	Cadence is calculated by counting how many ticks there are between two LOW to HIGH transitions.
+	Formula for calculating the cadence in RPM:
+	(1) Cadence in RPM = (60 * MOTOR_TASK_FREQ) / CADENCE_SENSOR_NUMBER_MAGNETS) / ticks
+	-------------------------------------------------------------------------------------------------*/
+static void calc_cadence(void){
+    // adjust cadence sensor ticks counter min depending on wheel speed - read in motor.c
     ui16_cadence_ticks_count_min_speed_adj = map_ui16(ui16_wheel_speed_x10,
             40,
             400,
             CADENCE_SENSOR_CALC_COUNTER_MIN,
             CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED);
 
-    // calculate cadence in RPM and avoid zero division
-    // !!!warning if MOTOR_TASK_FREQ > 21845
-    if (ui16_cadence_sensor_ticks_temp) {
-        ui8_pedal_cadence_RPM = (uint8_t)((MOTOR_TASK_FREQ * 3U) / ui16_cadence_sensor_ticks_temp);
-		
-		if(ui8_pedal_cadence_RPM > 120) {ui8_pedal_cadence_RPM = 120;}
-	}
-    else {
-        ui8_pedal_cadence_RPM = 0;
-	}
-	
-	/*-------------------------------------------------------------------------------------------------
-
-     NOTE: regarding the cadence calculation
-
-     Cadence is calculated by counting how many ticks there are between two LOW to HIGH transitions.
-
-     Formula for calculating the cadence in RPM:
-
-     (1) Cadence in RPM = (60 * MOTOR_TASK_FREQ) / CADENCE_SENSOR_NUMBER_MAGNETS) / ticks
-
-     (2) Cadence in RPM = (MOTOR_TASK_FREQ * 3) / ticks
-
-     -------------------------------------------------------------------------------------------------*/
-}
+    // calculate cadence in RPM
+	ui8_pedal_cadence_RPM = (uint8_t)(CADENCE_RPM_TICK_NUM / ui16_cadence_sensor_ticks);
+}	
 
 
 static void get_battery_voltage_filtered(void)
@@ -1721,7 +1701,13 @@ static void get_pedal_torque(void)
 	if((m_configuration_variables.ui8_startup_boost_enabled)&&(ui8_startup_boost_flag)
 	  &&(m_configuration_variables.ui8_riding_mode == POWER_ASSIST_MODE)) {
 		// calculate startup boost torque & new pedal torque delta
-		uint32_t ui32_temp = ((uint32_t)(ui16_adc_pedal_torque_delta * ui16_startup_boost_factor_array[ui8_pedal_cadence_RPM])) / 100;
+		uint8_t pedal_cadence_mod_RPM;
+		if (ui8_pedal_cadence_RPM > 120U){
+			pedal_cadence_mod_RPM = 120U;
+		}else{
+			pedal_cadence_mod_RPM = ui8_pedal_cadence_RPM;
+		}
+		uint32_t ui32_temp = ((uint32_t)(ui16_adc_pedal_torque_delta * ui16_startup_boost_factor_array[pedal_cadence_mod_RPM])) / 100;
 		ui16_adc_pedal_torque_delta += (uint16_t) ui32_temp;
 	}
 	

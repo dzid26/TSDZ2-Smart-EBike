@@ -312,7 +312,7 @@ volatile uint8_t ui8_fw_angle = 0;
 volatile uint8_t ui8_fw_angle_max;
 volatile uint8_t ui8_controller_duty_cycle_target = 0;
 volatile uint8_t ui8_g_foc_angle = 0;
-volatile uint8_t ui8_g_assist_level = 0;
+volatile uint8_t ui8_g_assist_level = OFF;
 static uint8_t ui8_counter_duty_cycle_ramp_up = 0;
 static uint8_t ui8_counter_duty_cycle_ramp_down = 0;
 
@@ -325,11 +325,11 @@ volatile uint8_t ui8_brake_state = 0;
 
 // cadence sensor
 #define NO_PAS_REF 5
-volatile uint16_t ui16_cadence_sensor_ticks = 0;
-//volatile uint32_t ui32_crank_revolutions_x20 = 0;
+volatile uint16_t ui16_cadence_sensor_ticks = CADENCE_TICKS_STOP;
 static uint16_t ui16_cadence_sensor_ticks_counter_min = CADENCE_SENSOR_CALC_COUNTER_MIN;
 static uint8_t ui8_pas_state_old = 4;
-static uint16_t ui16_cadence_calc_counter, ui16_cadence_stop_counter;
+static uint16_t ui16_cadence_calc_counter = CADENCE_COUNTER_MAX;
+static uint16_t ui16_cadence_stop_counter = 0;
 static uint8_t ui8_cadence_calc_ref_state = NO_PAS_REF;
 const static uint8_t ui8_pas_old_valid_state[4] = { 0x01, 0x03, 0x00, 0x02 };
 
@@ -357,7 +357,7 @@ void calc_foc_angle(void);
 uint8_t asin_table(uint8_t ui8_inverted_angle_x128);
 
 void motor_controller(void) {
-    ui16_motor_speed_erps = ((uint16_t) MOTOR_TASK_FREQ_FAST) / (ui16_PWM_cycles_counter_total);
+    ui16_motor_speed_erps = MOTOR_TASK_FREQ_FAST / ui16_PWM_cycles_counter_total;
     read_battery_voltage();
     calc_foc_angle();
 }
@@ -612,8 +612,8 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)  // exec
 			ui16_adc_torque_sensor_check = UI16_ADC_10_BIT_TORQUE_SENSOR;
 			
 			if((ui16_adc_torque_sensor_check < ui16_adc_pedal_torque_offset_cal)||(!ui8_adc_battery_current_target)) {
-				if((ui16_motor_speed_erps)
-				&&(!ui16_cadence_sensor_ticks)
+				if((ui16_motor_speed_erps > 0)
+				&&(ui16_cadence_sensor_ticks == CADENCE_TICKS_STOP)
 				#if OPTIONAL_ADC_FUNCTION == THROTTLE_CONTROL
 				&&(UI8_ADC_THROTTLE < ADC_THROTTLE_MIN_VALUE)
 				#endif
@@ -650,7 +650,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)  // exec
                 || (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off)
                 || (ui8_fw_angle > ui8_fw_angle_max)
                 || (ui8_brake_state)
-				|| (!ui8_g_assist_level)) {
+                || (ui8_g_assist_level == OFF)){
 			
             // reset duty cycle ramp up counter (filter)
             ui8_counter_duty_cycle_ramp_up = 0;
@@ -850,36 +850,34 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)  // exec
         if (ui8_pas_state != ui8_pas_state_old) {
             if (ui8_pas_state_old != ui8_pas_old_valid_state[ui8_pas_state]) {
                 // wrong state sequence: backward rotation
-                ui16_cadence_sensor_ticks = 0;
+                ui16_cadence_sensor_ticks = CADENCE_TICKS_STOP;
                 ui8_cadence_calc_ref_state = NO_PAS_REF;
                 goto skip_cadence;
             }
 
 			// motor fast stop
-			if(ui8_pedal_cadence_fast_stop && ui16_cadence_sensor_ticks) {
+			if(ui8_pedal_cadence_fast_stop && (ui16_cadence_sensor_ticks != CADENCE_TICKS_STOP)) {
 				ui16_cadence_sensor_ticks_counter_min = ui16_cadence_sensor_ticks - (CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD >> 1);
 			}
 			else {
 				ui16_cadence_sensor_ticks_counter_min = ui16_cadence_ticks_count_min_speed_adj;
 			}
-			
-            // Reference state for crank revolution counter increment
-            //if (ui8_pas_state == 0)
-            //    ui32_crank_revolutions_x20++;
 
             if (ui8_pas_state == ui8_cadence_calc_ref_state) {
                 // ui16_cadence_calc_counter is valid for cadence calculation
                 ui16_cadence_sensor_ticks = ui16_cadence_calc_counter;
-                ui16_cadence_calc_counter = 0;
+                ui16_cadence_calc_counter = CADENCE_COUNTER_RESET;
                 // software based Schmitt trigger to stop motor jitter when at resolution limits
                 ui16_cadence_sensor_ticks_counter_min += CADENCE_SENSOR_STANDARD_MODE_SCHMITT_TRIGGER_THRESHOLD;
             } else if (ui8_cadence_calc_ref_state == NO_PAS_REF) {
                 // this is the new reference state for cadence calculation
                 ui8_cadence_calc_ref_state = ui8_pas_state;
-                ui16_cadence_calc_counter = 0;
-            } else if (ui16_cadence_sensor_ticks == 0) {
-                // Waiting the second reference transition: set the cadence to 7 RPM for immediate start
-                ui16_cadence_sensor_ticks = CADENCE_TICKS_STARTUP;
+                ui16_cadence_calc_counter = CADENCE_COUNTER_RESET;
+                ui16_cadence_sensor_ticks = CADENCE_TICKS_STOP;
+            } else if (ui16_cadence_sensor_ticks == CADENCE_TICKS_STOP) {
+                // When first magnet passes through the two hal sensors we know we rotate forward, but can't calculate speed yet, so assume 1RPM
+                ui16_cadence_sensor_ticks = CADENCE_RPM_TICK_NUM; //1RPM
+                ui16_cadence_calc_counter = CADENCE_COUNTER_RESET;
             }
 
             skip_cadence:
@@ -891,10 +889,10 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)  // exec
 
         if (++ui16_cadence_stop_counter > ui16_cadence_sensor_ticks_counter_min) {
             // pedals stop detected
-            ui16_cadence_sensor_ticks = 0;
+            ui16_cadence_sensor_ticks = CADENCE_TICKS_STOP;
             ui16_cadence_stop_counter = 0;
             ui8_cadence_calc_ref_state = NO_PAS_REF;
-        } else if (ui8_cadence_calc_ref_state != NO_PAS_REF) {
+        } else if ((ui8_cadence_calc_ref_state != NO_PAS_REF) && (ui16_cadence_calc_counter < CADENCE_COUNTER_MAX)) {
             // increment cadence tick counter
             ++ui16_cadence_calc_counter;
         }
@@ -932,6 +930,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)  // exec
 							ui16_wheel_speed_sensor_ticks_counter = 0;
 							ui8_wheel_speed_sensor_ticks_counter_started = 0;
 						} else {
+                            //update latest tick and reset the counter
 							ui16_wheel_speed_sensor_ticks = ui16_wheel_speed_sensor_ticks_counter;
 							ui16_wheel_speed_sensor_ticks_counter = 0;
 							++ui32_wheel_speed_sensor_ticks_total;
