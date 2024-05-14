@@ -7,7 +7,6 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
 #include "stm8s_tim1.h"
 #include "stm8s_flash.h"
 #include "main.h"

@@ -32,7 +32,7 @@ void uart2_init(void) {
 }
 
 #if __SDCC_REVISION < 9624
-void putchar(char c)
+void uart_put_char(char c)
 {
   //Write a character to the UART2
   UART2_SendData8(c);
@@ -41,7 +41,7 @@ void putchar(char c)
   while (UART2_GetFlagStatus(UART2_FLAG_TXE) == RESET);
 }
 #else
-int putchar(int c)
+int uart_put_char(int c)
 {
   //Write a character to the UART2
   UART2_SendData8(c);
@@ -54,9 +54,9 @@ int putchar(int c)
 #endif
 
 #if __SDCC_REVISION < 9989
-char getchar(void)
+char uart_get_char(void)
 #else
-int getchar(void)
+int uart_get_char(void)
 #endif
 {
   uint8_t c = 0;

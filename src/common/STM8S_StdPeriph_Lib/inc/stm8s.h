@@ -241,8 +241,6 @@ typedef uint16_t u16;
 typedef uint8_t  u8;
 
 
-typedef enum {FALSE = 0, TRUE = !FALSE} bool;
-
 typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus, BitStatus, BitAction;
 
 typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
@@ -250,15 +248,6 @@ typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 typedef enum {ERROR = 0, SUCCESS = !ERROR} ErrorStatus;
 
-#define U8_MAX     (255)
-#define S8_MAX     (127)
-#define S8_MIN     (-128)
-#define U16_MAX    (65535u)
-#define S16_MAX    (32767)
-#define S16_MIN    (-32768)
-#define U32_MAX    (4294967295uL)
-#define S32_MAX    (2147483647)
-#define S32_MIN    (-2147483648uL)
 
 /**
   * @}

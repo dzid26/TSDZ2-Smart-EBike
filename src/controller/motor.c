@@ -7,7 +7,6 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
 #include <math.h>
 #include "motor.h"
 #include "interrupts.h"
@@ -685,7 +684,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)  // exec
             }
 		#if FIELD_WEAKENING_ENABLED
         } else if ((ui8_g_duty_cycle == PWM_DUTY_CYCLE_MAX)
-				&& (ui16_motor_speed_erps > MOTOR_SPEED_FIELD_WEAKEANING_MIN) // do not enable at low motor speed / low cadence
+				&& (ui16_motor_speed_erps > MOTOR_SPEED_FIELD_WEAKENING_MIN) // do not enable at low motor speed / low cadence
                 && (ui8_fw_angle_max > 0)
 				&& (ui8_adc_battery_current_filtered < ui8_controller_adc_battery_current_target)) {
             // reset duty cycle ramp down counter (filter)

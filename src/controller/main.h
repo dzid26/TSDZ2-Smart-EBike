@@ -35,7 +35,7 @@
 #define THROTTLE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT        98    // 80 at 15.625KHz
 #define THROTTLE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN            49     // 40 at 15.625KHz
 
-#define MOTOR_SPEED_FIELD_WEAKEANING_MIN          				300		// ERPS
+#define MOTOR_SPEED_FIELD_WEAKENING_MIN          				300		// ERPS
 
 // cadence
 #define CADENCE_SENSOR_CALC_COUNTER_MIN                         4266  // 3500 at 15.625KHz

@@ -7,7 +7,6 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
 #include "interrupts.h"
 #include "stm8s.h"
 #include "pins.h"

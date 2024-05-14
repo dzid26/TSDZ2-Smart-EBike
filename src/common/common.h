@@ -9,6 +9,8 @@
 #ifndef COMMON_COMMON_H_
 #define COMMON_COMMON_H_
 
+#include <stdint.h>
+
 // riding modes
 #define OFF_MODE                                  0
 #define POWER_ASSIST_MODE                         1

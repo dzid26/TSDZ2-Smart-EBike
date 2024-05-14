@@ -1,0 +1,57 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "SDCC build",
+			"command": "make",
+			"presentation": {
+				"echo": false,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": false,
+				"clear": true
+			},
+			"args": [
+				"all"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/src/controller/"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"type": "process",
+			"label": "STM8 Flash",
+			"windows": {
+			  "command": "flash.bat"
+			},
+			"osx": { //untested
+				"command": "make flash",
+			},
+			"linux": { //untested
+				"command": "make flash",
+			},
+			"options": {
+				"cwd": "${workspaceFolder}/src/controller"
+			},
+			"dependsOn": [
+				"SDCC build"
+			],
+			"presentation": {
+				"echo": false,
+				"reveal": "always",
+				"focus": true,
+				"close": false
+			},
+			"problemMatcher": []
+		}
+	],
+}

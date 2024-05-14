@@ -40,6 +40,22 @@ This project is being developed and maintained for free by a community of users.
 
 # For more information, go to the [wiki](https://github.com/emmebrusa/TSDZ2-Smart-EBike-1/wiki) instructions.
 
+## Development / contributing
+### Setup
+1. Clone this repository
+2. Install the SDCC compiler
+
+### Compile the firmware
+`cd src/controller/` and use `make` or `compile.bat` to compile the firmware.
+
+### Editing environment
+1. VScode can be used for the development.
+  a) open project top folder as workspace
+  b) install extensions from recommended popup
+  c) configure Intellisense by going to Settings `ctrl+,` and specifying `@id:C_Cpp.default.systemIncludePath` according to SDCC installation folder, e.g: `C:\\Program Files\\SDCC\\include`
+  d) `Ctrl+Shift+b` to build the firmware
+
+
 ## IMPORTANT NOTES
 * Installing this firmware will void your warranty of the TSDZ2 mid drive.
 * We are not responsible for any personal injuries or accidents caused by use of this firmware.

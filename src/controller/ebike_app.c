@@ -8,8 +8,8 @@
 
 #include "ebike_app.h"
 #include <stdint.h>
-#include <stdio.h>
 #include "stm8s.h"
+#include "stm8s_uart2.h"
 #include "stm8s_gpio.h"
 #include "main.h"
 #include "interrupts.h"
@@ -3323,7 +3323,7 @@ static void uart_send_package(void)
 		// send the full package to UART
 		for(ui8_i = 0; ui8_i < UART_TX_BUFFER_LEN; ui8_i++)
 		{
-			putchar(ui8_tx_buffer[ui8_i]);
+			uart_put_char(ui8_tx_buffer[ui8_i]);
 		}
 	}
 }

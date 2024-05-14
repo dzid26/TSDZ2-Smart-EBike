@@ -65,9 +65,9 @@ ebike_app.h pins.h eeprom.h lights.h config.h
 # The list of .rel files can be derived from the list of their source files
 RELS = $(addprefix $(ODIR)/,$(notdir $(EXTRASRCS:.c=.rel)))
 
-INCLUDES = -I$(IDIR) -I$(IDIR1)
-CFLAGS = -m$(PLATFORM) -D$(DEVICE) -Ddouble=float --std-c99 --nolospre --opt-code-speed --peep-asm --peep-file peep.txt
-DEBUG_FLAGS = --out-fmt-ihx --debug
+override INCLUDES += -I$(IDIR) -I$(IDIR1)
+override CFLAGS += -m$(PLATFORM) -D$(DEVICE) -Ddouble=float --std-c99 --nolospre --opt-code-speed --peep-asm --peep-file peep.txt
+override DEBUG_FLAGS += --out-fmt-ihx --debug
 LIBS = 
 
 # This just provides the conventional target name "all"; it is optional

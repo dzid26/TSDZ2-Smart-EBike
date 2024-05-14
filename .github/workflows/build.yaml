@@ -15,7 +15,7 @@ on:
     - "src/**/*"
 
 env:
-  SDCC_VERSION: 4.2.0
+  SDCC_VERSION: 4.4.0
 
 jobs:
   Build_Windows:
@@ -23,16 +23,20 @@ jobs:
     steps:
     - name: install SDCC
       run: | #install silent and then unpack missing installation libraries
-        Invoke-WebRequest https://netix.dl.sourceforge.net/project/sdcc/sdcc-win64/$env:SDCC_VERSION/sdcc-$env:SDCC_VERSION-x64-setup.exe -OutFile sdcc_setup.exe
+        Invoke-WebRequest https://netix.dl.sourceforge.net/project/sdcc/sdcc-win64/$env:SDCC_VERSION/sdcc-$env:SDCC_VERSION-rc3-x64-setup.exe -OutFile sdcc_setup.exe
+        ls
         Start-Process -wait -FilePath "sdcc_setup.exe" -ArgumentList "/S", "/D=C:\Program Files\SDCC"
-    - uses: actions/checkout@v2
+        echo "Adding sdcc to PATH"
+        Add-Content $env:GITHUB_PATH "C:\Program Files\SDCC\bin"
+    - uses: actions/checkout@v4
     - name: Build
       run: |
         cd src/controller
-        ./compile.bat
-    - uses: actions/upload-artifact@v3
+        ../../tools/cygwin/bin/make.exe clean
+        ../../tools/cygwin/bin/make.exe CFLAGS=--Werror
+    - uses: actions/upload-artifact@v4
       with:
-        name: firmware
+        name: firmware_from_windows
         path: bin/main.ihx
 
 
@@ -43,18 +47,41 @@ jobs:
         run: |
            cd ~
            wget https://altushost-swe.dl.sourceforge.net/project/sdcc/sdcc-linux-amd64/$SDCC_VERSION/sdcc-$SDCC_VERSION-amd64-unknown-linux2.5.tar.bz2
+           ls
            sudo tar xf sdcc-$SDCC_VERSION-amd64-unknown-linux2.5.tar.bz2
            cd sdcc-$SDCC_VERSION/
            sudo cp -r * /usr/local
            sdcc --version
            sdcc --print-search-dirs
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Build
         run: |
           cd src/controller
           make clean
-          make
-      - uses: actions/upload-artifact@v3
+          make CFLAGS=--Werror
+      - uses: actions/upload-artifact@v4
         with:
-          name: firmware
+          name: firmware_from_linux
           path: bin/main.ihx
+
+
+  Compare_builds:
+    needs: [Build_Windows, Build_Linux]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download Windows build
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware_from_windows
+          path: firmware_from_windows
+      - name: Download Linux build
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware_from_linux
+          path: firmware_from_linux
+      - name: Compare build files
+        run: |
+          ls
+          echo "Comparing build files"
+          git diff  firmware_from_windows/main.ihx firmware_from_linux/main.ihx --word-diff=color --ignore-space-at-eol --exit-code
+          echo "Done comparing build files. Files are the same."
