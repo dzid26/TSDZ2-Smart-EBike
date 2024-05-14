@@ -7,7 +7,6 @@
  */
 
 #include "ebike_app.h"
-#include <stdint.h>
 #include "stm8s.h"
 #include "stm8s_uart2.h"
 #include "stm8s_gpio.h"
@@ -154,6 +153,7 @@ static uint32_t ui32_odometer_compensation_mm = ZERO_ODOMETER_COMPENSATION;
 // throttle control
 static uint8_t ui8_throttle_adc = 0;
 static uint8_t ui8_street_mode_throttle_legal = STREET_MODE_THROTTLE_LEGAL;
+volatile bool pedals_torque_loaded = false;
 
 // motor temperature control
 static uint16_t ui16_adc_motor_temperature_filtered = 0;
@@ -770,7 +770,7 @@ static void apply_smooth_start(void){
 	#define SMOOTH_START_TAPER_OFF_ADDED_VOLTAGE_X100 3000U //extra 30V
 	
 	uint16_t pedal_torque = 0; //independent from advanced pedal mappings
-	if(ui16_adc_pedal_torque > ui16_adc_pedal_torque_offset_cal){
+	if(pedals_torque_loaded){
 		pedal_torque = ui16_adc_pedal_torque - ui16_adc_pedal_torque_offset_cal;
 	}
 
@@ -1610,6 +1610,8 @@ static void get_pedal_torque(void)
 		
         // get adc pedal torque
         ui16_adc_pedal_torque = UI16_ADC_10_BIT_TORQUE_SENSOR;
+
+		pedals_torque_loaded = (ui16_adc_pedal_torque > ui16_adc_pedal_torque_offset_cal);
     }
 	
     // calculate the delta value of adc pedal torque and the adc pedal torque range from calibration

@@ -10,6 +10,7 @@
 #define _EBIKE_APP_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "main.h"
 
 // startup boost mode
@@ -26,6 +27,9 @@ extern volatile uint8_t ui8_system_state;
 // torque sensor
 extern volatile uint8_t ui8_riding_torque_mode;
 extern volatile uint16_t ui16_adc_pedal_torque_offset_cal;
+
+// pedals are loaded
+extern volatile bool pedals_torque_loaded;
 
 // Torque sensor coaster brake engaged threshold value
 extern volatile uint16_t ui16_adc_coaster_brake_threshold;
