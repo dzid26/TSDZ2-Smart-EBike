@@ -1457,13 +1457,12 @@ static void calc_wheel_speed(void)
     // calc wheel speed (km/h x10)
     if (ui16_wheel_speed_sensor_ticks > 0U) {
         uint16_t ui16_tmp = ui16_wheel_speed_sensor_ticks;
-        // rps = PWM_CYCLES_SECOND / ui16_wheel_speed_sensor_ticks (rev/sec)
+        // rps = MOTOR_TASK_FREQ / ui16_wheel_speed_sensor_ticks (rev/sec)
         // km/h*10 = rps * ui16_wheel_perimeter * ((3600 / (1000 * 1000)) * 10)
-        // !!!warning if PWM_CYCLES_SECOND is not a multiple of 1000
-        ui16_wheel_speed_x10 = (uint16_t)(((uint32_t) m_configuration_variables.ui16_wheel_perimeter * ((PWM_CYCLES_SECOND/1000)*36U)) / ui16_tmp);
-    }
-	else {
-		ui16_wheel_speed_x10 = 0;
+        // !!!warning if MOTOR_TASK_FREQ is not a multiple of 1000
+        ui16_wheel_speed_x10 = (uint16_t)(((uint32_t) m_configuration_variables.ui16_wheel_perimeter * ((MOTOR_TASK_FREQ/1000)*36U)) / ui16_tmp);
+    } else {
+        ui16_wheel_speed_x10 = 0;
     }
 }
 
@@ -1481,9 +1480,9 @@ static void calc_cadence(void)
             CADENCE_SENSOR_TICKS_COUNTER_MIN_AT_SPEED);
 
     // calculate cadence in RPM and avoid zero division
-    // !!!warning if PWM_CYCLES_SECOND > 21845
+    // !!!warning if MOTOR_TASK_FREQ > 21845
     if (ui16_cadence_sensor_ticks_temp > 0U) {
-        ui8_pedal_cadence_RPM = (uint8_t)((PWM_CYCLES_SECOND * 3U) / ui16_cadence_sensor_ticks_temp);
+        ui8_pedal_cadence_RPM = (uint8_t)((MOTOR_TASK_FREQ * 3U) / ui16_cadence_sensor_ticks_temp);
 		
 		if (ui8_pedal_cadence_RPM > 120) {
 			ui8_pedal_cadence_RPM = 120;
@@ -1501,9 +1500,9 @@ static void calc_cadence(void)
 
      Formula for calculating the cadence in RPM:
 
-     (1) Cadence in RPM = (60 * PWM_CYCLES_SECOND) / CADENCE_SENSOR_NUMBER_MAGNETS) / ticks
+     (1) Cadence in RPM = (60 * MOTOR_TASK_FREQ) / CADENCE_SENSOR_NUMBER_MAGNETS) / ticks
 
-     (2) Cadence in RPM = (PWM_CYCLES_SECOND * 3) / ticks
+     (2) Cadence in RPM = (MOTOR_TASK_FREQ * 3) / ticks
 
      -------------------------------------------------------------------------------------------------*/
 }
