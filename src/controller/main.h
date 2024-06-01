@@ -36,7 +36,7 @@
 #define THROTTLE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN            49     // 40 at 15.625KHz
 
 #define MOTOR_SPEED_FIELD_WEAKENING_MIN          				300		// ERPS
-
+#define MOTOR_POLE_PAIRS	                                    8U 		// 1 * RPS = MOTOR_POLE_PAIRS * ERPS// cadence sensor
 // cadence sensor
 #define CADENCE_SENSOR_NUMBER_MAGNETS                           20U
 #define CADENCE_SENSOR_STATES                                   4U      // There are two hal sensors and both can be On or Off
@@ -184,6 +184,19 @@
 
  ---------------------------------------------------------*/
 
+//Gearing - motor
+/*------------------------------------------------------------------------------
+The secondary has a 93T gear being driven by an 10T, 
+so it is an 9.3:1 reduction (the primary “blue gear” was 4.5:1), 
+for a total of 4.5 X 9.3 = 41.85:1
+https://www.electricbike.com/tsdz2-750w-mid-drive-torque-sensing
+---------------------------------------------------------------------------------*/
+#define MOTOR_GEAR_RATIO_X8 335U // 41.85
+
+//motor updates speed 6x8 per motor revolution (6 hal states)
+//cadence updates speed with each of its hal sensor state transition (CADENCE_SENSOR_STATES) which is every 6x8x42/20/4 motor revolutions (about 24x slower)
+#define MOTOR_EROTATIONS_EVERY_CADENCE_TICK ((uint16_t) MOTOR_POLE_PAIRS * MOTOR_GEAR_RATIO_X8 / 8U / CADENCE_SENSOR_NUMBER_MAGNETS / CADENCE_SENSOR_STATES) //motor has 6 hal sensor states
+        
 
 
 // default values

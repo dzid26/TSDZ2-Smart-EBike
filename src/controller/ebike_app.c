@@ -151,7 +151,7 @@ static uint8_t ui8_oem_wheel_diameter = 0;
 static uint32_t ui32_odometer_compensation_mm = ZERO_ODOMETER_COMPENSATION;
 
 // throttle control
-static uint8_t ui8_throttle_adc = 0;
+volatile uint8_t ui8_throttle_adc = 0;
 static uint8_t ui8_street_mode_throttle_legal = STREET_MODE_THROTTLE_LEGAL;
 volatile bool pedals_torque_loaded = false;
 

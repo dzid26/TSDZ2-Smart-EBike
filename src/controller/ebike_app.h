@@ -31,6 +31,9 @@ extern volatile uint16_t ui16_adc_pedal_torque_offset_cal;
 // pedals are loaded
 extern volatile bool pedals_torque_loaded;
 
+//throttle is enabled and applied
+extern volatile uint8_t ui8_throttle_adc;
+
 // Torque sensor coaster brake engaged threshold value
 extern volatile uint16_t ui16_adc_coaster_brake_threshold;
 
