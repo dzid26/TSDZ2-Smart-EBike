@@ -358,7 +358,7 @@ void calc_foc_angle(void);
 uint8_t asin_table(uint8_t ui8_inverted_angle_x128);
 
 void motor_controller(void) {
-    ui16_motor_speed_erps = ((uint16_t) DOUBLE_PWM_CYCLES_SECOND) / (ui16_PWM_cycles_counter_total);
+    ui16_motor_speed_erps = ((uint16_t) MOTOR_TASK_FREQ_FAST) / (ui16_PWM_cycles_counter_total);
     read_battery_voltage();
     calc_foc_angle();
 }
@@ -383,7 +383,7 @@ void motor_controller(void) {
 //  - check brake (coaster brake and brake input signal)
 //  - calculate and apply duty cycle to TIM1
 
-void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
+void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)  // execution freq: MOTOR_TASK_FREQ_FAST
 {
 	struct_configuration_variables *p_configuration_variables;
     p_configuration_variables = get_configuration_variables();
@@ -465,7 +465,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
                 ui16_PWM_cycles_counter_total = ui16_PWM_cycles_counter_a;
 
                 // update motor commutation state based on motor speed
-                if (ui16_PWM_cycles_counter_total < (DOUBLE_PWM_CYCLES_SECOND / MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES)) {
+                if (ui16_PWM_cycles_counter_total < (MOTOR_TASK_FREQ_FAST / MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES)) {
                     ui8_motor_commutation_type = SINEWAVE_INTERPOLATION_60_DEGREES;
                 } else {
                     ui8_motor_commutation_type = BLOCK_COMMUTATION;
@@ -485,7 +485,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
                 ui16_PWM_cycles_counter_total = ui16_PWM_cycles_counter_b;
 
                 // update motor commutation state based on motor speed
-                if (ui16_PWM_cycles_counter_total < (DOUBLE_PWM_CYCLES_SECOND / MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES)) {
+                if (ui16_PWM_cycles_counter_total < (MOTOR_TASK_FREQ_FAST / MOTOR_ROTOR_ERPS_START_INTERPOLATION_60_DEGREES)) {
                     ui8_motor_commutation_type = SINEWAVE_INTERPOLATION_60_DEGREES;
                 } else {
                     ui8_motor_commutation_type = BLOCK_COMMUTATION;
@@ -546,7 +546,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
     }
 
     // TIM1->CR1 & 0x10 contains counter direction (0=up, 1=down)
-    if (ui8_pwm_down) {
+    if (ui8_pwm_down) { //execution frequency: MOTOR_TASK_FREQ
         uint8_t ui8_svm_table_index;
         uint8_t ui8_phase_a_voltage;
         uint8_t ui8_phase_b_voltage;
@@ -647,7 +647,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         if ((ui8_g_duty_cycle > ui8_controller_duty_cycle_target)
                 || (ui8_adc_battery_current_filtered > ui8_controller_adc_battery_current_target)
                 || (ui8_adc_motor_phase_current > ui8_adc_motor_phase_current_max)
-                || (ui16_PWM_cycles_counter_total < (DOUBLE_PWM_CYCLES_SECOND / MOTOR_OVER_SPEED_ERPS))
+                || (ui16_PWM_cycles_counter_total < (MOTOR_TASK_FREQ_FAST / MOTOR_OVER_SPEED_ERPS))
                 || (UI8_ADC_BATTERY_VOLTAGE < ui8_adc_battery_voltage_cut_off)
                 || (ui8_fw_angle > ui8_fw_angle_max)
                 || (ui8_brake_state)

@@ -18,9 +18,9 @@
 // motor
 #define PWM_PERIOD                                              420U
 #define PWM_DOUBLE_PERIOD                                       (2U*PWM_PERIOD) //PWM center aligned mode: counts from 0 to PWM_PERIOD and then down from PWM_PERIOD to 0
-#define PWM_CYCLES_SECOND                                       ((uint16_t)(HSE_VALUE / PWM_DOUBLE_PERIOD)) // 19047Hz - 52us (PWM period)  - !! has to be less than 21845
-#define DOUBLE_PWM_CYCLES_SECOND                                ((uint16_t)(HSE_VALUE / PWM_PERIOD))  // 25us (2 irq x PWM period)
-#define PWM_CYCLES_COUNTER_MAX                                  (DOUBLE_PWM_CYCLES_SECOND + 1U)  // +1U ensures ui16_motor_speed_erps is 0 when counter is max
+#define MOTOR_TASK_FREQ                                       ((uint16_t)(HSE_VALUE / PWM_DOUBLE_PERIOD)) // 19047Hz - 52us (PWM period)  - !! has to be less than 21845
+#define MOTOR_TASK_FREQ_FAST                                    ((uint16_t)(HSE_VALUE / PWM_PERIOD))  // 25us (2 irq x PWM period)
+#define PWM_CYCLES_COUNTER_MAX                                  (MOTOR_TASK_FREQ_FAST + 1U)  // +1U ensures ui16_motor_speed_erps is 0 when counter is max
 // ramp up/down PWM cycles count
 #define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_CADENCE_OFFSET      60     // PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP offset for cadence assist mode
 //#define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT             195    // 160 -> 160 * 64 us for every duty cycle increment at 15.625KHz
@@ -29,7 +29,7 @@
 #define PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN                 20     // 20 -> 20 * 64 us for every duty cycle increment at 15.625KHz
 #define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT           49     // 40 -> 40 * 64 us for every duty cycle decrement at 15.625KHz
 #define PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN               10     // 8 -> 8 * 64 us for every duty cycle decrement at 15.625KHz
-#define MOTOR_OVER_SPEED_ERPS                                   650    // motor max speed | 30 points for the sinewave at max speed (less than PWM_CYCLES_SECOND/30)
+#define MOTOR_OVER_SPEED_ERPS                                   650    // motor max speed | 30 points for the sinewave at max speed (less than MOTOR_TASK_FREQ/30)
 #define CRUISE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP                  98    // 80 at 15.625KHz
 #define WALK_ASSIST_DUTY_CYCLE_RAMP_UP_INVERSE_STEP             255    // 200 at 15.625KHz
 #define THROTTLE_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT        98    // 80 at 15.625KHz
