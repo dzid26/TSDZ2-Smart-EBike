@@ -587,7 +587,7 @@ static void ebike_control_motor(void)
         motor_disable_pwm();
     }
 	else if (!ui8_motor_enabled
-			&& (ui16_motor_speed_erps < 50) // enable the motor only if it rotates slowly or is stopped
+			&& (ui16_motor_speed_erps < (ui16_battery_voltage_filtered_x1000 / K_BEMF_X1000)) && // only enable motor if below base speed, else something bad can happen due to high currents/regen or similar
 			&& (ui8_adc_battery_current_target > 0U)
 			&& (!ui8_brake_state)) {
 		ui8_motor_enabled = 1;
