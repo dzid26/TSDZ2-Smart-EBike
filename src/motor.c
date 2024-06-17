@@ -60,8 +60,9 @@ volatile uint16_t ui16_hall_counter_total = 0xffff;
 // power variables
 volatile uint8_t ui8_controller_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT;
 volatile uint8_t ui8_controller_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
-volatile uint16_t ui16_adc_voltage_cut_off = 300*100/BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000; // 30Volt default value
+volatile uint16_t ui16_adc_voltage_cut_off = 0xffff;
 volatile uint8_t ui8_adc_battery_current_filtered = 0;
+volatile uint8_t *ui8_adc_battery_current = (uint8_t*) 0x53EA;
 volatile uint8_t ui8_controller_adc_battery_current_target = 0;
 volatile uint8_t ui8_g_duty_cycle = 0;
 volatile uint8_t ui8_controller_duty_cycle_target = 0;
@@ -276,7 +277,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER) {
                 ui16_hall_360_ref = ui16_b;
                 // calculate hall ticks between the last two Hall transitions (for Hall calibration)
                 ui16_hall_calib_cnt[3] = ui16_hall_360_ref - ui16_hall_60_ref_old;
-
                 #ifdef HALL_DEBUG
                     if (ui8_hall_sensors_state_last != 0x03) {
                         ui8_hall_seq_errors++;

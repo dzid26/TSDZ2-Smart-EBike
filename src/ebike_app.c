@@ -118,6 +118,7 @@ static uint16_t ui16_motor_speed_erps = 0;
 
 // cadence sensor
 static uint8_t ui8_pedal_cadence_RPM = 0;
+static uint8_t cadence_from_motor_erps = 0;
 static uint8_t ui8_motor_deceleration = MOTOR_DECELERATION;
 
 // torque sensor
@@ -252,6 +253,7 @@ static void apply_throttle(void);
 static void apply_temperature_limiting(void);
 static void apply_speed_limit(void);
 static void apply_smooth_start(void);
+static void apply_rev_matching(void);
 
 // functions for oem display
 static void calc_oem_wheel_speed(void);
@@ -273,7 +275,7 @@ void ebike_app_init(void)
 	#endif
 	
 	// set low voltage cutoff (16 bit)
-	ui16_adc_voltage_cut_off = ((uint32_t) m_configuration_variables.ui16_battery_low_voltage_cut_off_x10 * 100U) / BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000;
+	ui16_adc_voltage_cut_off = ((uint16_t) BATTERY_LOW_VOLTAGE_CUT_OFF * (1000 >> 2)) / BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000;
 	
 	// check if assist without pedal rotation threshold is valid (safety)
 	if (ui8_assist_without_pedal_rotation_threshold > 100) {
@@ -506,6 +508,7 @@ static void ebike_control_motor(void)
 	apply_temperature_limiting();
 	#endif
 	
+	apply_rev_matching();
     apply_speed_limit();
 	#if SMOOTH_START_ENABLED
 	apply_smooth_start();
@@ -582,13 +585,18 @@ static void ebike_control_motor(void)
 			|| (ui8_battery_SOC_saved_flag)
 			|| ((ui16_motor_speed_erps == 0)
 				&& (ui8_adc_battery_current_target == 0U)
-				&& (ui8_g_duty_cycle == 0U)))) {
+				&& (ui8_g_duty_cycle == 0U)
+	  			&& (ui8_pedal_cadence_RPM == 0U)
+				)
+			)
+		) {
         ui8_motor_enabled = 0;
         motor_disable_pwm();
     }
 	else if (!ui8_motor_enabled
 			&& (ui16_motor_speed_erps < (ui16_battery_voltage_filtered_x1000 / K_BEMF_X1000)) // only enable motor if below base speed, else something bad can happen due to high currents/regen or similar
 			&& (ui8_adc_battery_current_target > 0U)
+			&&((ui8_duty_cycle_target > 0U) || (ui8_pedal_cadence_RPM > 0U)) //todo for revmatching
 			&& (!ui8_brake_state)) {
 		ui8_motor_enabled = 1;
 		ui8_g_duty_cycle = PWM_DUTY_CYCLE_STARTUP;
@@ -668,7 +676,7 @@ static void apply_smooth_start(void){
 	/*
 	* Smooth startup torque achieved by controlling current via PWM - more precise than current control
 	*/
-	#define SMOOTH_START_PEDAL_FACTOR  9U //more = stronger start torque// good values: 8 for cold motor, 12 for hot motor
+	#define SMOOTH_START_PEDAL_FACTOR  10U //more = stronger start torque// good values: 8 for cold motor, 12 for hot motor
 	#define SMOOTH_START_THROTTLE_FACTOR 4U
 	#define SMOOTH_START_TAPER_OFF_THRESHOLD_PEDAL  (ADC_TORQUE_SENSOR_RANGE_TARGET_MAX/2U)
 	#define SMOOTH_START_TAPER_OFF_SLOPE_PEDAL (SMOOTH_START_PEDAL_FACTOR/4U)  //more = quicker transition to normal assist current target
@@ -730,12 +738,15 @@ static void apply_smooth_start(void){
 	
 	//voltage based control assumes the winding resistance is constant for simplicity
 	uint32_t smooth_start_voltage_target_x100 = (uint32_t)(uint16_t)(smooth_start_voltage_limit_x100 + smooth_start_voltage_limit_blend_x100);
+	
+	// uint32_t pedal_sync_voltage_target_x1000 = (uint32_t)K_BEMF_X1000 * MOTOR_GEAR_RATIO_X8 * ui8_pedal_cadence_RPM * MOTOR_POLE_PAIRS / 8U / 60U; //rpm to rps at the motor
+
 	//due to resolution of the pwm duty cycle, BEMF starts to increase the duty effectively only above about 3erps
-	smooth_start_voltage_target_x100 += (uint32_t)(uint16_t)((uint16_t)ui16_motor_bemf_voltage_x1000 / 10U);
+	smooth_start_voltage_target_x100 += (uint32_t)(uint16_t)((uint16_t)ui16_motor_bemf_voltage_x1000 / 10U);//it's ok when (uint16_t) cast overflows at high rpm
 	if (smooth_start_voltage_target_x100 > UINT16_MAX){
 		smooth_start_voltage_target_x100 = UINT16_MAX;
 	}
-	smooth_start_duty_cycle_target = (uint16_t)((smooth_start_voltage_target_x100 << 8U) / (uint32_t)(uint16_t)(ui16_battery_voltage_filtered_x1000/10U));
+	smooth_start_duty_cycle_target = (uint16_t)((smooth_start_voltage_target_x100 << PWM_DUTY_CYCLE_BITS) / (uint32_t)(uint16_t)(ui16_battery_voltage_filtered_x1000/10U));
 
 	//ignore smooth start if walk assist controls the duty cycle
 	if(ui8_walk_assist_flag && ((uint16_t)ui8_walk_assist_duty_cycle_target > smooth_start_duty_cycle_target)){
@@ -744,6 +755,40 @@ static void apply_smooth_start(void){
 	//limit duty cycle for the smooth start
 	if (smooth_start_duty_cycle_target < (uint16_t)ui8_duty_cycle_target){
 		ui8_duty_cycle_target = (uint8_t)smooth_start_duty_cycle_target;
+	}
+}
+
+static void apply_rev_matching(void){
+	// Revmatching - when cadence > 0, use pedal cadence as a target for motor speed - effectively motor follow pedals
+	if ((ui8_riding_torque_mode == 1U) && (ui8_pedal_cadence_RPM > 0U)){
+		uint16_t pedal_sync_duty_cycle_target = 0;
+		//accelerate as fast as possible until motor speed is close to pedal speed
+
+
+		uint32_t pedal_sync_voltage_target_x1000 = (uint32_t)K_BEMF_X1000 * MOTOR_GEAR_RATIO_X8 * ui8_pedal_cadence_RPM * MOTOR_POLE_PAIRS / 8U / 60U; //rpm to rps at the motor
+		pedal_sync_duty_cycle_target = (uint16_t)((pedal_sync_voltage_target_x1000 << PWM_DUTY_CYCLE_BITS) / (ui16_battery_voltage_filtered_x1000));
+		pedal_sync_duty_cycle_target += 0U; //add extra to compensate friction
+		uint8_t cadence_motor_pedal_delta = 0U;
+		if(cadence_from_motor_erps < ui8_pedal_cadence_RPM){
+			cadence_motor_pedal_delta = ui8_pedal_cadence_RPM - (uint8_t)cadence_from_motor_erps;
+		}else{
+			cadence_motor_pedal_delta = 0;
+		}
+
+		if (pedal_sync_duty_cycle_target > PWM_DUTY_CYCLE_MAX){pedal_sync_duty_cycle_target = PWM_DUTY_CYCLE_MAX;}
+		uint8_t pedal_sync_duty_cycle_cmd = map_ui8(cadence_motor_pedal_delta,
+													0U,                		// cadence-motor delta for bemf only compensation
+													20U,                 	// cadence-motor delta for full accerlation
+													(uint8_t) pedal_sync_duty_cycle_target, // small cadence-motor delta duty cycle
+													PWM_DUTY_CYCLE_MAX); 	// large cadence-motor delta duty cycle
+
+		if (ui8_adc_battery_current_target == 0U){
+			ui8_adc_battery_current_target = (pedal_sync_voltage_target_x1000 - ui16_motor_bemf_voltage_x1000)*2;  // x2 is  inverse of resistance //todo introduce resistance or redo this differntly
+		}
+
+		if (ui8_duty_cycle_target < pedal_sync_duty_cycle_cmd) {
+			ui8_duty_cycle_target = pedal_sync_duty_cycle_cmd;
+		}
 	}
 }
 
@@ -850,7 +895,7 @@ static void apply_torque_assist(void)
 
         // calculate torque assist target current
         uint16_t ui16_adc_battery_current_target_torque_assist = ((uint16_t) ui16_adc_pedal_torque_delta
-                * ui8_torque_assist_factor) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
+                * ui8_torque_assist_factor+TORQUE_ASSIST_FACTOR_DENOMINATOR-1) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
 
         // set motor acceleration / deceleration
 		set_motor_ramp();
@@ -1512,9 +1557,16 @@ static void calc_wheel_speed(void)
 	Formula for calculating the cadence in RPM:
 	(1) Cadence in RPM = (60 * MOTOR_TASK_FREQ) / CADENCE_SENSOR_NUMBER_MAGNETS) / ticks
 	-------------------------------------------------------------------------------------------------*/
-static void calc_cadence(void){    // Calculate cadence in RPM 
-	ui8_pedal_cadence_RPM = (uint8_t)(CADENCE_RPM_TICK_NUM / ui16_cadence_sensor_ticks);
-}	
+static void calc_cadence(void){
+	uint8_t ui8_cadence_temp = (uint8_t)(CADENCE_RPM_TICK_NUM / ui16_cadence_sensor_ticks); //cadence rpm from cadence sensor
+	cadence_from_motor_erps = ((uint16_t) 60U * 8U / MOTOR_POLE_PAIRS * ui16_motor_speed_erps / MOTOR_GEAR_RATIO_X8 );//cadence rpm from motor speed
+
+	if((ui8_cadence_temp > 0U) && (cadence_from_motor_erps > ui8_cadence_temp)){
+		ui8_pedal_cadence_RPM = cadence_from_motor_erps;
+	}else{
+		ui8_pedal_cadence_RPM = ui8_cadence_temp;
+	}
+}
 
 
 void get_battery_voltage(void)
@@ -3155,10 +3207,10 @@ static void uart_send_package(void)
 					ui16_display_data = (uint16_t) ui16_display_data_factor / (ui8_pedal_cadence_RPM * 10);
 					#else
 					if (ui8_pedal_cadence_RPM > 99) {
-						ui16_display_data = (uint16_t) ui16_display_data_factor / ui8_pedal_cadence_RPM;
+						ui16_display_data = (uint16_t) ui16_display_data_factor / cadence_from_motor_erps;
 					}
 					else {
-						ui16_display_data = (uint16_t) ui16_display_data_factor / (ui8_pedal_cadence_RPM * 10);
+						ui16_display_data = (uint16_t) ui16_display_data_factor / (cadence_from_motor_erps * 10);
 					}
 					#endif
 				  break;
