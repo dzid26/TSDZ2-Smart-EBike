@@ -86,9 +86,17 @@
 #if MOTOR_TYPE
 // 36 volt motor
 #define FOC_ANGLE_MULTIPLIER								30
+
+//bemf 36V motor = 0.0806 V/(rad/s) = 0.5 V/(rev/s) = 0.0633 V/erps source:  https://avdweb.nl/solar-bike/hub-motor/efficiency-bldc-motor-tongsheng-tsdz2-and-astro-3205-compared
+#define K_BEMF_X1000                                        63U
+
 #else
 // 48 volt motor
 #define FOC_ANGLE_MULTIPLIER								39
+
+//casainho said 48V motor has the same max speed (4000rpm) as 36V motor [with corresponding battery] and 4/3 more windings, so the BEMF factor can be scaled by 4/3:
+//bemf 48V motor: 0.0633 * 48/36 = 0.0844 V/erps:
+#define K_BEMF_X1000                                        84U
 #endif
 
 // cadence
