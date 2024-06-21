@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <math.h>
 #include "motor.h"
+#include "main.h"
 #include "interrupts.h"
 #include "stm8s_gpio.h"
 #include "stm8s_tim1.h"
@@ -92,6 +93,10 @@ volatile uint16_t ui16_adc_throttle;
 // brakes
 volatile uint8_t ui8_brake_state = 0;
 
+//overrun is used for blue gear protection against slipping, and effectively as pedals stopping detection, gear shifting unloading
+static int8_t i8_motor_erotations_since_cadence_tick = 0;
+
+
 // cadence sensor
 volatile uint16_t ui16_cadence_sensor_ticks = CADENCE_TICKS_STOP;
 
@@ -153,6 +158,11 @@ void HALL_SENSOR_A_PORT_IRQHandler(void)  __interrupt(EXTI_HALL_A_IRQ) {
     ui8_hall_60_ref_irq[1] = TIM3->CNTRL;
     if (((HALL_SENSOR_A__PORT->IDR) & GPIO_PIN_5)){
         ui8_hall_state_irq |= 0x01U;
+        if ((HALL_SENSOR_C__PORT->IDR & HALL_SENSOR_C__PIN)){ //reverse
+            i8_motor_erotations_since_cadence_tick--;
+        }else{ // ((HALL_SENSOR_B__PORT->IDR & HALL_SENSOR_B__PIN) > 0U)) //forward
+            i8_motor_erotations_since_cadence_tick++;
+        }
     }else{
         ui8_hall_state_irq &= ~0x01U;
     }
@@ -218,8 +228,9 @@ static uint16_t ui16_c;
 
 static uint8_t ui8_temp;
 
-void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
-{
+void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER) {
+    static uint8_t overrun = false; //true if motor rotating faster than pedals
+
     // bit 5 of TIM1->CR1 contains counter direction (0=up, 1=down)
     if (TIM1->CR1 & 0x10) {
 		#ifndef __CDT_PARSER__ // disable Eclipse syntax check
@@ -271,8 +282,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
                         ui8_hall_seq_errors++;
 					}
                 #endif
-            }
-			else {
+            } else {
                 switch (ui8_temp) {
                     case 0x02:
                         ui8_motor_phase_absolute_angle = ui8_hall_ref_angles[1]; // Rotor at 90 deg
@@ -799,7 +809,9 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
           || (ui8_adc_motor_phase_current > ui8_adc_motor_phase_current_max)
           || (ui16_hall_counter_total < (HALL_COUNTER_FREQ / MOTOR_OVER_SPEED_ERPS))
           || (ui16_adc_voltage < ui16_adc_voltage_cut_off)
-          || (ui8_brake_state)) {
+          || (ui8_brake_state)
+          || (overrun && ((ui8_riding_torque_mode && !ui8_throttle_adc_in)    ))// || pedals_torque_loaded))//check for overrun in torque modes unless throttle is applied. Don't check ofr overrun in non-torque modes i.e. cadence or cruise modes unless pedals are loaded.
+          ) {
 			
             // reset duty cycle ramp up counter (filter)
             ui8_counter_duty_cycle_ramp_up = 0;
@@ -913,6 +925,10 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
 
         if (ui8_cadence_hal_state != ui8_cadence_hal_state_prev) {
+            if (overrun){ //turn off overrun only after cadence tick to confirm motor slowed down
+                overrun = (i8_motor_erotations_since_cadence_tick >= (int8_t)(MOTOR_EROTATIONS_EVERY_CADENCE_TICK));
+            }
+            i8_motor_erotations_since_cadence_tick = 0;
             if (ui8_cadence_hal_state_prev == ui8_pas_prev_state[ui8_cadence_hal_state]) {//forward direction
                 if (ui16_cadence_hal_state_cnt[ui8_cadence_hal_state] < CADENCE_TICKS_STOP) {//normal operation - not stopped
                     ui16_cadence_sensor_ticks = ui16_cadence_hal_state_cnt[ui8_cadence_hal_state];
@@ -956,6 +972,10 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         // when full stop, ui16_cadence_sensor_ticks becomes CADENCE_TICKS_STOP
         if (ui16_cadence_hal_state_cnt[ui8_pas_next_state[ui8_cadence_hal_state]] > ui16_cadence_sensor_ticks) {
             ui16_cadence_sensor_ticks = ui16_cadence_hal_state_cnt[ui8_pas_next_state[ui8_cadence_hal_state]];
+        }
+
+        if (!overrun) {//check for overrun +2 is for false positive rejection and as a hysteresis
+            overrun = (i8_motor_erotations_since_cadence_tick > ((int8_t)MOTOR_EROTATIONS_EVERY_CADENCE_TICK + 2));
         }
 
         #ifdef TIME_DEBUG

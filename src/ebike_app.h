@@ -25,6 +25,9 @@ extern volatile uint8_t ui8_system_state;
 // pedals are loaded
 extern volatile bool pedals_torque_loaded;
 
+//throttle is enabled and applied
+extern volatile uint8_t ui8_throttle_adc_in;
+
 // Torque sensor coaster brake engaged threshold value
 extern volatile uint16_t ui16_adc_coaster_brake_threshold;
 
@@ -34,6 +37,8 @@ extern volatile uint8_t ui8_adc_motor_phase_current_max;
 // Motor enabled
 extern volatile uint8_t ui8_motor_enabled;
 
+// Torque type of assist
+extern volatile uint8_t ui8_riding_torque_mode;
 typedef struct _configuration_variables
 {
   //uint8_t ui8_motor_power_x10; // not used

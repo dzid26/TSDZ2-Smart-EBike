@@ -82,6 +82,8 @@
 #define MOTOR_OVER_SPEED_ERPS								((MOTOR_TASK_FREQ/29) < 650 ?  (MOTOR_TASK_FREQ/29) : 650) // motor max speed | 29 points for the sinewave at max speed (less than MOTOR_TASK_FREQ/29)
 #define MOTOR_SPEED_FIELD_WEAKENING_MIN						490
 
+#define MOTOR_POLE_PAIRS	                                    8U 		// 1 * RPS = MOTOR_POLE_PAIRS * ERPS// cadence sensor
+
 // foc angle multiplier
 #if MOTOR_TYPE
 // 36 volt motor
@@ -98,6 +100,20 @@
 //bemf 48V motor: 0.0633 * 48/36 = 0.0844 V/erps:
 #define K_BEMF_X1000                                        84U
 #endif
+
+//Gearing - motor
+/*------------------------------------------------------------------------------
+The secondary has a 93T gear being driven by an 10T, 
+so it is an 9.3:1 reduction (the primary “blue gear” was 4.5:1), 
+for a total of 4.5 X 9.3 = 41.85:1
+https://www.electricbike.com/tsdz2-750w-mid-drive-torque-sensing
+---------------------------------------------------------------------------------*/
+#define MOTOR_GEAR_RATIO_X8 335U // 41.85
+
+//motor updates speed 6x8 per motor revolution (6 hal states)
+//cadence updates speed with each of its hal sensor state transition (CADENCE_SENSOR_STATES) which is every 6x8x42/20/4 motor revolutions (about 24x slower)
+#define MOTOR_EROTATIONS_EVERY_CADENCE_TICK ((uint8_t)(MOTOR_POLE_PAIRS * MOTOR_GEAR_RATIO_X8 / 8U / CADENCE_SENSOR_NUMBER_MAGNETS / CADENCE_SENSOR_STATES)) //motor has 6 hal sensor states
+
 
 // cadence sensor
 /*---------------------------------------------------------------------------
@@ -117,6 +133,7 @@
 #define CADENCE_TICKS_STARTUP_RPM                   1U
 
 #define CADENCE_RPM_TICK_NUM						(MOTOR_TASK_FREQ * (60U / CADENCE_SENSOR_NUMBER_MAGNETS))
+#define CADENCE_RPS_TICK_NUM						(MOTOR_TASK_FREQ / CADENCE_SENSOR_NUMBER_MAGNETS)
 #define CADENCE_COUNTER_RESET						1U
 #define CADENCE_TICKS_STOP							(CADENCE_RPM_TICK_NUM + 1U) //add one to ensure the division with CADENCE_RPM_TICK_NUM gives 0RPM
 // Wheel speed sensor
@@ -130,6 +147,7 @@
 #define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX_SPEED        ((uint16_t)((uint32_t)WHEEL_PERIMETER * MOTOR_TASK_FREQ / (MAX_PLAUSIBLE_WHEEL_SPEED_X10 / 10U) * 60U / 1000U * 60U / 1000U))// small value - fast rotation
 
 #define PWM_DUTY_CYCLE_MAX									UINT8_MAX
+#define PWM_DUTY_CYCLE_BITS                                 8U
 #define PWM_DUTY_CYCLE_STARTUP								30    // Initial PWM Duty Cycle at motor startup
 
 // ----------------------------------------------------------------------------------------------------------------

@@ -10,6 +10,7 @@
 #define _MOTOR_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // motor states
 #define BLOCK_COMMUTATION 			            0

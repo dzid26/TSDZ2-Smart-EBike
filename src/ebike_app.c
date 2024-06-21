@@ -75,6 +75,7 @@ static uint8_t ui8_lights_button_flag = 0;
 static uint8_t ui8_field_weakening_erps_delta = 0;
 static uint8_t ui8_optional_ADC_function = OPTIONAL_ADC_FUNCTION;
 static uint8_t ui8_walk_assist_level = 0;
+volatile uint8_t ui8_riding_torque_mode = 0;
 
 // battery
 static uint16_t ui16_battery_voltage_filtered_x10 = 0;
@@ -157,7 +158,7 @@ static uint32_t ui32_odometer_compensation_mm = ZERO_ODOMETER_COMPENSATION;
 
 // throttle control
 static uint8_t ui8_adc_throttle_assist = 0;
-static uint8_t ui8_throttle_adc_in = 0;
+volatile uint8_t ui8_throttle_adc_in = 0;
 static uint8_t ui8_throttle_mode_array[2] = {THROTTLE_MODE,STREET_MODE_THROTTLE_MODE};
 volatile bool pedals_torque_loaded = false;
 
@@ -1671,7 +1672,6 @@ static void check_system(void)
 // E09 shared with ERROR_WRITE_EEPROM
 #define MOTOR_CHECK_TIME_GOES_ALONE_TRESHOLD         	80 // 80 * 100ms = 8.0 seconds
 #define MOTOR_CHECK_ERPS_THRESHOLD                  	20 // 20 ERPS
-static uint8_t ui8_riding_torque_mode = 0;
 static uint8_t ui8_motor_check_goes_alone_timer = 0U;
 	
 	// riding modes that use the torque sensor
