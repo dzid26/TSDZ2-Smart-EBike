@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "main.h"
 #include "motor.h"
+#include "main.h"
 #include "interrupts.h"
 #include "stm8s.h"
 #include "stm8s_gpio.h"
@@ -51,7 +52,7 @@ static const uint8_t ui8_svm_table[SVM_TABLE_LEN] = { 208, 209, 210, 212, 213, 2
 uint8_t ui8_hall_360_ref_valid = 0;
 uint8_t ui8_motor_commutation_type = BLOCK_COMMUTATION;
 static uint8_t ui8_motor_phase_absolute_angle;
-volatile uint16_t ui16_hall_counter_total = 0xffff;
+volatile uint16_t ui16_hall_counter_total = UINT16_MAX;
 
 // power variables
 volatile uint8_t ui8_controller_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT;
@@ -61,6 +62,7 @@ volatile uint8_t ui8_adc_battery_current_filtered = 0;
 volatile uint8_t ui8_controller_adc_battery_current_target = 0;
 volatile uint8_t ui8_g_duty_cycle = 0;
 volatile uint8_t ui8_controller_duty_cycle_target = 0;
+volatile uint8_t ui8_pedal_sync_bemf_duty_target = 0;
 // Field Weakening Hall offset (added during interpolation)
 volatile uint8_t ui8_fw_hall_counter_offset = 0;
 volatile uint8_t ui8_field_weakening_enabled = 0;
@@ -87,6 +89,9 @@ volatile uint16_t ui16_adc_throttle;
 
 // brakes
 volatile uint8_t ui8_brake_state = 0;
+
+static uint16_t motor_hall_ticks = 0; // hall state change counter
+
 
 // cadence sensor
 volatile uint16_t ui16_cadence_sensor_ticks = CADENCE_TICKS_STOP;
@@ -122,15 +127,17 @@ volatile uint8_t ui8_hall_seq_errors = 0;
 // ADC conversion is automatically started by the rising edge of TRGO signal which is aligned with the Down interrupt signal.
 // Both interrupts are used to read HAL sensors and update rotor position counters (max 26us rotor position offset error)
 // and then:
-// Up interrupt is used for:
-//  - read and filter battery current
-//  - read PAS sensor and cadence computation
-//  - check brake (coaster brake and brake input signal)
-//  - update duty cycle
 // Down interrupt is used for:
+//  - hall state detection, ticks counters
 //  - calculate rotor position (based on HAL sensors state and interpolation based on counters)
+// Up interrupt is used for:
 //  - Apply phase voltage and duty cycle to TIM1 outputs according to rotor position
-//  - Read Wheel speed sensor and wheel speed computation
+//  - read and filter adc current, voltage, throttle
+//  - check brake (coaster brake and brake input signal)
+//  - check motor overrun
+//  - calculate duty cycle
+//  - read Wheel speed sensor and wheel speed computation
+//  - read PAS sensor and cadence computation
 
 #ifdef __CDT_PARSER__
 #define __interrupt(x)  // Disable Eclipse syntax check on interrupt keyword
@@ -216,10 +223,10 @@ static uint16_t ui16_c;
 
 static uint8_t ui8_temp;
 
-INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER)
-{
-    // bit 5 of TIM1->CR1 contains counter direction (0=up, 1=down)
-    if (TIM1->CR1 & 0x10) {
+INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER) {
+
+    // TIM1_CR1 bit 4 (DIR): 0=counting up, 1=counting down
+    if (TIM1->CR1 & 0x10) { // Down — hall state detection, rotor position
 #ifndef __CDT_PARSER__ // disable Eclipse syntax check
         __asm
             push cc             // save current Interrupt Mask (I1,I0 bits of CC register)
@@ -249,6 +256,7 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER)
         // rotor position:  30,   90,   150,  210,  270,  330 degrees
 		
         if (ui8_hall_sensors_state_last != ui8_temp) {
+            ++motor_hall_ticks;
             // Check first the state with the heaviest computation
             if (ui8_temp == 0x01) {
                 // if (ui8_hall_360_ref_valid && (ui8_hall_sensors_state_last == 0x03)) {
@@ -269,8 +277,7 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER)
                         ui8_hall_seq_errors++;
 					}
 #endif
-            }
-			else {
+            } else {
                 switch (ui8_temp) {
                     case 0x02:
                         ui8_motor_phase_absolute_angle = ui8_hall_ref_angles[1]; // Rotor at 90 deg
@@ -356,7 +363,7 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER)
                 ui8_motor_commutation_type = BLOCK_COMMUTATION;
                 ui8_g_foc_angle = 0;
                 ui8_hall_360_ref_valid = 0;
-                ui16_hall_counter_total = 0xffff;
+                ui16_hall_counter_total = UINT16_MAX;
             }
         }
 
@@ -605,8 +612,8 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER)
 	#endif
 #endif
 
-    }
-	else {
+    } // end Down
+	else { // Up — phase voltage, ADC, brake, duty cycle, wheel, PAS
         // CRITICAL SECTION !
         // Disable GPIO Hall interrupt during PWM counter update
         // The whole update is completed in 9 CPU cycles
@@ -795,6 +802,36 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER)
         //ui8_brake_state = ((BRAKE__PORT->IDR & BRAKE__PIN) ^ BRAKE__PIN);
 		ui8_brake_state = ((BRAKE__PORT->IDR & (uint8_t)BRAKE__PIN) == 0);
 #endif
+
+
+        /* ----------------------------------------------------------------------------
+        *  Overrun detection is used to protect one-way clutch in the blue gear protection against slipping often caused by stresses on * 
+        *  Variable slip threshold: N × (MOTOR_TASK_FREQ / (limit_erps × MOTOR_HALL_STATES)) > sensor_ticks
+        *  N = pas_hall_delta - MOTOR_HALL_TICKS_EVERY_CADENCE_TICK (motor_slippage hall ticks)
+        *  limit_erps = 40 ERPS - gives some margin (25erps is minimum to detect slip with one tick over at 650 ERPS motor max)
+        *  coeff = 19047/(40*6) ≈ 79
+        */
+        #define OVERRUN_SLIPPAGE_MAX        MOTOR_HALL_STATES * MOTOR_POLE_PAIRS // one mechanical rotation
+        #define OVERRUN_SLIP_ERPS_MAX       40U // or 25 ERPS ≈ 3 RPM
+        #define OVERRUN_SLIP_INVERS_COEFF   ((uint8_t)(MOTOR_TASK_FREQ / (OVERRUN_SLIP_ERPS_MAX * MOTOR_HALL_STATES)))
+        static uint8_t overrun = false; //true if motor rotating faster than pedals
+        static uint16_t pas_hall_snapshot = 0; // motor hall tick snapshot at PAS state change
+        uint16_t pas_hall_delta = motor_hall_ticks - pas_hall_snapshot; // hall ticks since last PAS state change
+        if (!overrun) {
+            if (pas_hall_delta > MOTOR_HALL_TICKS_EVERY_CADENCE_TICK) { // positive slip - (prevent overflow)
+                uint16_t motor_slippage = pas_hall_delta - MOTOR_HALL_TICKS_EVERY_CADENCE_TICK;
+                if((((uint16_t)(motor_slippage * OVERRUN_SLIP_INVERS_COEFF) > ui16_cadence_sensor_ticks)
+                   || ((motor_slippage > OVERRUN_SLIPPAGE_MAX) && (ui16_cadence_sensor_ticks < CADENCE_TICKS_STOP)))) { // todo  cadence check even needed?
+                    overrun = true;
+                }
+            }
+        } else {
+            if(ui16_hall_counter_total == UINT16_MAX) {
+                overrun = false;
+                pas_hall_snapshot = motor_hall_ticks;
+            }
+            /* and overrun clears on PAS state change */
+        }
 		
         /****************************************************************************/
         // PWM duty_cycle controller:
@@ -810,10 +847,19 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER)
 		  || (ui8_adc_motor_phase_current > ui8_adc_motor_phase_current_max)
           || (ui16_hall_counter_total < (HALL_COUNTER_FREQ / MOTOR_OVER_SPEED_ERPS))
           || (ui16_adc_voltage < ui16_adc_voltage_cut_off)
-          || (ui8_brake_state)) {
+          || (ui8_brake_state)
+          || (overrun && ((ui8_riding_torque_mode && !ui8_throttle_adc_map)    ))// || pedals_torque_loaded))//check for overrun in torque modes unless throttle is applied. Don't check ofr overrun in non-torque modes i.e. cadence or cruise modes unless pedals are loaded.
+          ) {
 			
             // reset duty cycle ramp up counter (filter)
             ui8_counter_duty_cycle_ramp_up = 0;
+
+            // jump down to estimated no-torque duty to quickly stop overrun
+            if (overrun && (ui8_g_duty_cycle > ui8_pedal_sync_bemf_duty_target)) {
+                // on overrun reduce straight to target bemf voltage to remove torque quickly
+                ui8_g_duty_cycle = ui8_pedal_sync_bemf_duty_target;
+                ui8_fw_hall_counter_offset = 0;
+            }
 			
             // ramp down duty cycle
             if (++ui8_counter_duty_cycle_ramp_down > ui8_controller_duty_cycle_ramp_down_inverse_step) {
@@ -920,8 +966,13 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER)
         static uint8_t ui8_pas_state_prev = 0xffU;
         static uint16_t ui16_pas_state_cnt[CADENCE_SENSOR_STATES] = {CADENCE_TICKS_STOP, CADENCE_TICKS_STOP, CADENCE_TICKS_STOP, CADENCE_TICKS_STOP};
 
-
         if (ui8_pas_state != ui8_pas_state_prev) {
+            // reevaluate overrun since the last cadence pulse
+            if (overrun){ 
+                //hysteresis - overrun cleared when counter matches expected ticks
+                overrun = (pas_hall_delta > (uint16_t)(MOTOR_HALL_TICKS_EVERY_CADENCE_TICK + 1U));
+            }
+            pas_hall_snapshot = motor_hall_ticks;
             if (ui8_pas_state_prev == ui8_pas_prev_state[ui8_pas_state]) {//forward direction
                 if (ui16_pas_state_cnt[ui8_pas_state] < CADENCE_TICKS_STOP) {//normal operation - not stopped
                     ui16_cadence_sensor_ticks = ui16_pas_state_cnt[ui8_pas_state];

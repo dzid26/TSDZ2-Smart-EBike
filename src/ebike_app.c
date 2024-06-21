@@ -71,7 +71,7 @@ static uint8_t ui8_optional_ADC_function = OPTIONAL_ADC_FUNCTION;
 static uint8_t ui8_walk_assist_level = 0;
 
 // check system
-static uint8_t ui8_riding_torque_mode = 0;
+volatile uint8_t ui8_riding_torque_mode = 0;
 static uint8_t ui8_motor_check_goes_alone_timer = 0;
 static uint8_t ui8_check_torque_sensor_counter = 0;
 static uint8_t ui8_check_cadence_sensor_counter = 0;
@@ -181,7 +181,7 @@ static uint32_t ui32_odometer_compensation_mm = ZERO_ODOMETER_COMPENSATION;
 
 // throttle control
 static uint8_t ui8_adc_throttle_assist = 0;
-static uint8_t ui8_throttle_adc_map = 0;
+volatile uint8_t ui8_throttle_adc_map = 0;
 static uint8_t ui8_throttle_mode_array[2] = {THROTTLE_MODE,STREET_MODE_THROTTLE_MODE};
 volatile bool pedals_torque_loaded = false;
 
@@ -1780,6 +1780,16 @@ static void calc_motor_bemf(void){
 	//the worst case scenario is for 48V motor where max speed before overflow is 
 	//780erps (around 140rpm cadence using 41.8 gearing) - avoided due to MOTOR_OVER_SPEED_ERPS limit
 	ui16_motor_bemf_voltage_x1000 = ui16_motor_speed_erps * K_BEMF_X1000;
+	// Predict BEMF voltage for motor at pedals speed - max 133rpm
+	uint16_t pedal_sync_bemf_voltage_x1000 = (uint32_t)K_BEMF_X1000 * MOTOR_GEAR_RATIO_X8 * ui8_pedal_cadence_RPM * MOTOR_POLE_PAIRS / 8U / 60U;
+	uint16_t pedal_sync_bemf_duty = (uint16_t)(((uint32_t)pedal_sync_bemf_voltage_x1000 << PWM_DUTY_CYCLE_BITS) / (uint32_t)ui16_battery_voltage_filtered_x10/100U);
+
+	// Controls target
+	if (pedal_sync_bemf_duty < PWM_DUTY_CYCLE_MAX) {
+		ui8_pedal_sync_bemf_duty_target = (uint8_t)pedal_sync_bemf_duty;
+	} else {
+		ui8_pedal_sync_bemf_duty_target = PWM_DUTY_CYCLE_MAX;
+	}
 }
 
 

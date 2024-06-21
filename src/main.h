@@ -89,6 +89,8 @@ extern volatile uint8_t u8_isr_load_perc;
 #define MOTOR_SPEED_FIELD_WEAKENING_MIN						490 // 90 rpm
 #define ERPS_SPEED_OF_MOTOR_REENABLING						320 // 60 rpm
 
+#define MOTOR_POLE_PAIRS	                                    8U 		// 1 * RPS = MOTOR_POLE_PAIRS * ERPS// cadence sensor
+
 // foc angle multiplier
 #if MOTOR_TYPE
 // 36 volt motor
@@ -106,26 +108,15 @@ extern volatile uint8_t u8_isr_load_perc;
 #define K_BEMF_X1000                                        84U
 #endif
 
-// cadence sensor
-/*---------------------------------------------------------------------------
- NOTE: regarding the cadence sensor
+//Gearing - motor
+/*------------------------------------------------------------------------------
+The secondary has a 93T gear being driven by an 10T, 
+so it is an 9.3:1 reduction (the primary “blue gear” was 4.5:1), 
+for a total of 4.5 X 9.3 = 41.85:1
+https://www.electricbike.com/tsdz2-750w-mid-drive-torque-sensing
+---------------------------------------------------------------------------------*/
+#define MOTOR_GEAR_RATIO_X8 335U // 41.85
 
- CADENCE_SENSOR_NUMBER_MAGNETS = 20, this is the number of magnets used for
- the cadence sensor. Was validated on August 2018 by Casainho and jbalat
-
- Cadence is calculated by counting how much time passes between two
- transitions. Depending on if all transitions are measured or simply
- transitions of the same kind it is important to adjust the calculation of
- pedal cadence.
-*/
-#define CADENCE_SENSOR_NUMBER_MAGNETS				20U
-#define CADENCE_SENSOR_STATES                       4U      // There are two hal sensors and both can be On or Off
-
-#define CADENCE_TICKS_STARTUP_RPM                   1U
-
-#define CADENCE_RPM_TICK_NUM						(MOTOR_TASK_FREQ * (60U / CADENCE_SENSOR_NUMBER_MAGNETS))
-#define CADENCE_COUNTER_RESET						1U
-#define CADENCE_TICKS_STOP							(CADENCE_RPM_TICK_NUM + 1U) //add one to ensure the division with CADENCE_RPM_TICK_NUM gives 0RPM
 // Wheel speed sensor
 #define MAX_PLAUSIBLE_WHEEL_SPEED_X10				800U
 #define WHEEL_SPEED_COUNTER_RESET					1U
@@ -167,6 +158,7 @@ HALL_COUNTER_OFFSET_DOWN:  8  -> 23
 HALL_COUNTER_OFFSET_UP:    29 -> 44
 ****************************************
 */
+#define MOTOR_TICKS_PER_REV                     (MOTOR_POLE_PAIRS * MOTOR_HALL_STATES) // per mechanical revolution
 
 #define MOTOR_HALL_STATES                       6U      // 6 states per electrical rotation (360°) for BLDC motors
 
@@ -175,7 +167,35 @@ HALL_COUNTER_OFFSET_UP:    29 -> 44
 #define FW_HALL_COUNTER_OFFSET_MAX              3 // 3*4=12us max time offset
 
 #define MOTOR_ROTOR_INTERPOLATION_MIN_ERPS      4U // 4 is minimum to turn of interpolation before ui16_hall_counter_total overflows at low speed
- 
+
+// cadence sensor
+/*---------------------------------------------------------------------------
+ NOTE: regarding the cadence sensor
+
+ CADENCE_SENSOR_NUMBER_MAGNETS = 20, this is the number of magnets used for
+ the cadence sensor. Was validated on August 2018 by Casainho and jbalat
+
+ Cadence is calculated by counting how much time passes between two
+ transitions. Depending on if all transitions are measured or simply
+ transitions of the same kind it is important to adjust the calculation of
+ pedal cadence.
+*/
+#define CADENCE_SENSOR_NUMBER_MAGNETS				20U
+#define CADENCE_SENSOR_STATES                       4U      // There are two hal sensors and both can be On or Off
+
+#define CADENCE_TICKS_PER_REV       (CADENCE_SENSOR_NUMBER_MAGNETS * CADENCE_SENSOR_STATES)
+
+//expected motor hall state changes per cadence PAS state change
+#define MOTOR_HALL_TICKS_EVERY_CADENCE_TICK ((uint16_t)(MOTOR_TICKS_PER_REV * MOTOR_GEAR_RATIO_X8 / 8U / CADENCE_TICKS_PER_REV))  // 25.125 -> 25
+
+#define CADENCE_TICKS_STARTUP_RPM                   1U
+
+#define CADENCE_RPM_TICK_NUM						(MOTOR_TASK_FREQ * (60U / CADENCE_SENSOR_NUMBER_MAGNETS))
+#define CADENCE_RPS_TICK_NUM						(MOTOR_TASK_FREQ / CADENCE_SENSOR_NUMBER_MAGNETS)
+#define CADENCE_COUNTER_RESET						1U
+#define CADENCE_TICKS_STOP							(CADENCE_RPM_TICK_NUM + 1U) //add one to ensure the division with CADENCE_RPM_TICK_NUM gives 0RPM
+
+
 // adc torque offset gap value for error
 #define ADC_TORQUE_SENSOR_OFFSET_THRESHOLD		30
 

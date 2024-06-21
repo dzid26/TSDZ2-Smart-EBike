@@ -10,6 +10,7 @@
 #define MOTOR_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "main.h"
 
 // motor states
@@ -27,6 +28,7 @@ extern volatile uint8_t ui8_fw_hall_counter_offset;
 extern volatile uint8_t ui8_field_weakening_enabled;
 extern volatile uint16_t ui16_hall_counter_total;
 extern volatile uint8_t ui8_controller_duty_cycle_target;
+extern volatile uint8_t ui8_pedal_sync_bemf_duty_target;
 extern volatile uint16_t ui16_hall_calib_cnt[MOTOR_HALL_STATES];
 extern volatile uint8_t ui8_hall_ref_angles[MOTOR_HALL_STATES];
 extern volatile uint8_t ui8_hall_counter_offsets[MOTOR_HALL_STATES];
