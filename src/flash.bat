@@ -17,8 +17,7 @@ if errorlevel 1 goto FAIL
 
 :PASS
 echo.
-echo Flash successful, press any key to close...
-pause > nul
+echo Flash successful
 goto EXIT
 :FAIL
 echo.

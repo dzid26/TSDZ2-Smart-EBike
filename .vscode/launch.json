@@ -5,7 +5,8 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"preLaunchTask": "SDCC build",
+			"preLaunchTask": "STM8 Build & Flash",
+			"postDebugTask": "OpenOCD reset target",
 			"name": "STM8-gdb",
 			"request": "launch",
 			"type": "cppdbg",
@@ -23,7 +24,7 @@
 			"filterStderr": true,
 			"filterStdout": false,
 			"debugServerPath": "openocd.exe",
-			"debugServerArgs": "-f interface/stlink-dap.cfg -f target/stm8s105.cfg -c \"cd C:/Users/dzidm/Repos/TSDZ2-Smart-EBike-1\" -c init -c \"reset halt\" -c \"load_image bin/main.hex 0x8000\" -c reset",
+			"debugServerArgs": "-f interface/stlink-dap.cfg -f target/stm8s105.cfg -c \"cd C:/Users/dzidm/Repos/TSDZ2-Smart-EBike-1\" -c init -c reset",
 			// "miDebuggerServerAddress": "localhost:3333",    // it probably connects to server too early with this
 			// "serverStarted": "downloaded\\s+\\d+\\s+bytes", // doesn't seem to be necessary
 			"setupCommands": [
@@ -46,7 +47,6 @@
 				"trace": true,
 			},
 		},
-
 		{
 			"preLaunchTask": "SDCC build",
 			"name": "stm8-debug extension", // it is Windows only
@@ -65,9 +65,6 @@
 				// "cd src",
 				"set solib-search-path C:/Users/dzidm/Repos/TSDZ2-Smart-EBike-1/src/",
 				// "directory ./", //doesn't seem to work  https://alex.dzyoba.com/blog/gdb-source-path/
-				
-				
-				
 			]
 		}
 	]

@@ -29,7 +29,7 @@
 		},
 		{
 			"type": "process",
-			"label": "STM8 Flash",
+			"label": "STM8 Build & Flash",
 			"windows": {
 			  "command": "flash.bat"
 			},
@@ -66,7 +66,8 @@
 			"problemMatcher": [],
 		},
 		{
-			"label": "Flash with OpenOCD",
+			"label": "Flash with OpenOCD",  //actually doesn't seem to flash correctly
+			"hide": true,
 			"type": "process",
 			"presentation": {
 				"reveal": "always",
@@ -94,7 +95,9 @@
 				"-c",
 				"reset halt",
                 "-c",
-                "load_image bin/main.hex 0x8000",
+                "load_image bin/main.hex 0x9000",
+				"-c",
+				"reset",
 				"-c",
 				"exit",
                 // "-c",
@@ -105,6 +108,38 @@
                 "kind": "build",
                 "isDefault": true
             },
+		},
+		{
+			"label": "OpenOCD reset target",
+			"hide": true,
+			"type": "process",
+			"presentation": {
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"dependsOn": "SDCC build",
+			"command": "openocd",
+			"options": {
+				"cwd": "${workspaceFolder}",
+			},
+			"runOptions": {
+				"instanceLimit": 1,
+			},
+			"args": [
+				"interface/stlink-dap.cfg",
+				"-f",
+				"target/stm8s105.cfg",
+				"-c",
+				"init",
+				"-c",
+				"reset",
+				"-c",
+				"exit",
+			],
+			"problemMatcher": [],
 		}
 	],
 }
