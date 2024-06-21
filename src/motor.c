@@ -158,25 +158,31 @@ volatile uint8_t ui8_hall_60_ref_irq[2];
 void HALL_SENSOR_A_PORT_IRQHandler(void)  __interrupt(EXTI_HALL_A_IRQ) {
     ui8_hall_60_ref_irq[0] = TIM3->CNTRH;
     ui8_hall_60_ref_irq[1] = TIM3->CNTRL;
-    ui8_hall_state_irq &= (unsigned char)~0x01;
-    if (HALL_SENSOR_A__PORT->IDR & HALL_SENSOR_A__PIN)
-        ui8_hall_state_irq |= (unsigned char)0x01;
+    if (((HALL_SENSOR_A__PORT->IDR) & GPIO_PIN_5)){
+        ui8_hall_state_irq |= 0x01U;
+    }else{
+        ui8_hall_state_irq &= ~0x01U;
+    }
 }
 
 void HALL_SENSOR_B_PORT_IRQHandler(void) __interrupt(EXTI_HALL_B_IRQ)  {
     ui8_hall_60_ref_irq[0] = TIM3->CNTRH;
     ui8_hall_60_ref_irq[1] = TIM3->CNTRL;
-    ui8_hall_state_irq &= (unsigned char)~0x02;
-    if (HALL_SENSOR_B__PORT->IDR & HALL_SENSOR_B__PIN)
-        ui8_hall_state_irq |= (unsigned char)0x02;
+    if (HALL_SENSOR_B__PORT->IDR & HALL_SENSOR_B__PIN){
+        ui8_hall_state_irq |= 0x02U;
+    }else{
+        ui8_hall_state_irq &= ~0x02U;
+    }
 }
 
 void HALL_SENSOR_C_PORT_IRQHandler(void) __interrupt(EXTI_HALL_C_IRQ)  {
     ui8_hall_60_ref_irq[0] = TIM3->CNTRH;
     ui8_hall_60_ref_irq[1] = TIM3->CNTRL;
-    ui8_hall_state_irq &= (unsigned char)~0x04;
-    if (HALL_SENSOR_C__PORT->IDR & HALL_SENSOR_C__PIN)
-        ui8_hall_state_irq |= (unsigned char)0x04;
+    if (HALL_SENSOR_C__PORT->IDR & HALL_SENSOR_C__PIN){
+        ui8_hall_state_irq |= 0x04U;
+    }else{
+        ui8_hall_state_irq &= ~0x04U;
+    }
 }
 
 // Last rotor complete revolution Hall ticks
