@@ -76,6 +76,7 @@ static uint8_t ui8_field_weakening_feature_enabled = 0;
 static uint8_t ui8_field_weakening_erps_delta = 0;
 static uint8_t ui8_optional_ADC_function = OPTIONAL_ADC_FUNCTION;
 static uint8_t ui8_walk_assist_level = 0;
+volatile uint8_t ui8_riding_torque_mode = 0;
 
 // battery
 static uint16_t ui16_battery_voltage_filtered_x10 = 0;
@@ -158,7 +159,7 @@ static uint32_t ui32_odometer_compensation_mm = ZERO_ODOMETER_COMPENSATION;
 
 // throttle control
 static uint8_t ui8_adc_throttle_assist = 0;
-static uint8_t ui8_throttle_adc_in = 0;
+volatile uint8_t ui8_throttle_adc_in = 0;
 static uint8_t ui8_throttle_mode_array[2] = {THROTTLE_MODE,STREET_MODE_THROTTLE_MODE};
 volatile bool pedals_torque_loaded = false;
 
@@ -1674,7 +1675,6 @@ static void check_system(void)
 // E05 ERROR_MOTOR_CHECK (E03 blinking for XH18)
 // E05 shared with ERROR_BATTERY_OVERCURRENT
 #define MOTOR_CHECK_TIME_GOES_ALONE_TRESHOLD         	40  // 40 * 100ms = 4.0 seconds
-static uint8_t ui8_riding_torque_mode = 0;
 static uint8_t ui8_motor_check_time_goes_alone = MOTOR_CHECK_TIME_GOES_ALONE_TRESHOLD;
 	
 	// riding modes that use the torque sensor
