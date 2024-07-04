@@ -103,8 +103,7 @@ static uint8_t ui8_cadence_calc_ref_state = NO_PAS_REF;
 const static uint8_t ui8_pas_old_valid_state[4] = { 0x01, 0x03, 0x00, 0x02 };
 
 // wheel speed sensor
-volatile uint16_t ui16_wheel_speed_sensor_ticks = 0;
-volatile uint16_t ui16_wheel_speed_sensor_ticks_counter_min = 0;
+volatile uint16_t ui16_wheel_speed_sensor_ticks = WHEEL_SPEED_TICKS_STOP;
 
 // battery soc
 volatile uint8_t ui8_battery_SOC_saved_flag = 0;
@@ -863,59 +862,42 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         /****************************************************************************/
         // Wheel speed sensor detection
 
-        static uint16_t ui16_wheel_speed_sensor_ticks_counter;
-        static uint8_t ui8_wheel_speed_sensor_ticks_counter_started;
+        static uint16_t ui16_wheel_speed_sensor_ticks_counter = WHEEL_SPEED_COUNTER_MAX;
         static uint8_t ui8_wheel_speed_sensor_pin_state_old;
 
         // check wheel speed sensor pin state
-        ui8_temp = WHEEL_SPEED_SENSOR__PORT->IDR & WHEEL_SPEED_SENSOR__PIN;
+        uint8_t ui8_wheel_speed_sensor_pin_state = WHEEL_SPEED_SENSOR__PORT->IDR & WHEEL_SPEED_SENSOR__PIN;
 
-		// check wheel speed sensor ticks counter min value
-		if (ui16_wheel_speed_sensor_ticks) { ui16_wheel_speed_sensor_ticks_counter_min = ui16_wheel_speed_sensor_ticks >> 3; }
-		else { ui16_wheel_speed_sensor_ticks_counter_min = WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN >> 3; }
-
-		if (!ui8_wheel_speed_sensor_ticks_counter_started ||
-		  (ui16_wheel_speed_sensor_ticks_counter > ui16_wheel_speed_sensor_ticks_counter_min)) { 
+        //ignores pulses that would result in 8x previous speed
+		if(ui16_wheel_speed_sensor_ticks_counter > (ui16_wheel_speed_sensor_ticks / 8U)) { //starts with 65535 / 
 			// check if wheel speed sensor pin state has changed
-			if (ui8_temp != ui8_wheel_speed_sensor_pin_state_old) {
+			if (ui8_wheel_speed_sensor_pin_state != ui8_wheel_speed_sensor_pin_state_old) {
 				// update old wheel speed sensor pin state
-				ui8_wheel_speed_sensor_pin_state_old = ui8_temp;
+				ui8_wheel_speed_sensor_pin_state_old = ui8_wheel_speed_sensor_pin_state;
 
 				// only consider the 0 -> 1 transition
-				if (ui8_temp) {
-					// check if first transition
-					if (!ui8_wheel_speed_sensor_ticks_counter_started) {
-						// start wheel speed sensor ticks counter as this is the first transition
-						ui8_wheel_speed_sensor_ticks_counter_started = 1;
-					}
-					else {
-						// check if wheel speed sensor ticks counter is out of bounds
-						if (ui16_wheel_speed_sensor_ticks_counter < WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX) {
-							ui16_wheel_speed_sensor_ticks = 0;
-							ui16_wheel_speed_sensor_ticks_counter = 0;
-							ui8_wheel_speed_sensor_ticks_counter_started = 0;
-						}
-						else {
-							ui16_wheel_speed_sensor_ticks = ui16_wheel_speed_sensor_ticks_counter;
-							ui16_wheel_speed_sensor_ticks_counter = 0;
-						}
-					}
+				if (ui8_wheel_speed_sensor_pin_state) {
+                    // check if wheel speed sensor ticks counter is out of bounds
+                    if (ui16_wheel_speed_sensor_ticks_counter < WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX_SPEED) {//if overspeed
+                        ui16_wheel_speed_sensor_ticks = WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX_SPEED;
+                        ui16_wheel_speed_sensor_ticks_counter = WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX_SPEED;
+                    } else {
+                        //update latest tick and reset the counter
+                        ui16_wheel_speed_sensor_ticks = ui16_wheel_speed_sensor_ticks_counter;
+                        ui16_wheel_speed_sensor_ticks_counter = WHEEL_SPEED_COUNTER_RESET;
+                    }
 				}
 			}
+            if (ui16_wheel_speed_sensor_ticks_counter > ui16_wheel_speed_sensor_ticks) {
+                //start decaying the speed if the pulse is taking longer than from last pulse
+                ui16_wheel_speed_sensor_ticks = ui16_wheel_speed_sensor_ticks_counter;
+            }
 		}
-
+		
         // increment and also limit the ticks counter
-        if (ui8_wheel_speed_sensor_ticks_counter_started)
-            if (ui16_wheel_speed_sensor_ticks_counter < WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN) {
-                ++ui16_wheel_speed_sensor_ticks_counter;
-            }
-			else {
-                // reset variables
-                ui16_wheel_speed_sensor_ticks = 0;
-                ui16_wheel_speed_sensor_ticks_counter = 0;
-                ui8_wheel_speed_sensor_ticks_counter_started = 0;
-            }
-
+        if (ui16_wheel_speed_sensor_ticks_counter < WHEEL_SPEED_COUNTER_MAX) {
+            ++ui16_wheel_speed_sensor_ticks_counter;
+        }
 
         /****************************************************************************/
 
