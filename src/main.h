@@ -101,7 +101,7 @@
 #define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MAX				(uint16_t)((uint32_t)PWM_CYCLES_SECOND*10U/1157U)   // (135 at 15,625KHz) something like 200 m/h with a 6'' wheel
 #define WHEEL_SPEED_SENSOR_TICKS_COUNTER_MIN				(uint16_t)((uint32_t)PWM_CYCLES_SECOND*1000U/477U) // 32767@15625KHz could be a bigger number but will make for a slow detection of stopped wheel speed
 
-#define PWM_DUTY_CYCLE_MAX									254
+#define PWM_DUTY_CYCLE_MAX									UINT8_MAX
 #define PWM_DUTY_CYCLE_STARTUP								30    // Initial PWM Duty Cycle at motor startup
 
 // ----------------------------------------------------------------------------------------------------------------

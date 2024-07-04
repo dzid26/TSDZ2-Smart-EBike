@@ -559,11 +559,6 @@ static void ebike_control_motor(void)
         if (ui8_adc_battery_current_target > ui8_adc_battery_current_max) {
             ui8_adc_battery_current_target = ui8_adc_battery_current_max;
         }
-
-        // limit target duty cycle if higher than max value
-        if (ui8_duty_cycle_target > PWM_DUTY_CYCLE_MAX) {
-            ui8_duty_cycle_target = PWM_DUTY_CYCLE_MAX;
-        }
 		
         // limit target duty cycle ramp up inverse step if lower than min value (safety)
         if (ui8_duty_cycle_ramp_up_inverse_step < PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN) {
