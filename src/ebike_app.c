@@ -369,16 +369,14 @@ void ebike_app_init(void)
 		/ (uint16_t)BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100;
 
 	// calculate max adc battery current from the received power limit in offroad mode
-	ui32_battery_current_max_x100 = (TARGET_MAX_BATTERY_POWER_DIV25 * 2500000)
-		/ ui16_battery_voltage_filtered_x1000;
+	ui32_battery_current_max_x100 = (uint32_t)TARGET_MAX_BATTERY_POWER * 100 * 1000	/ ui16_battery_voltage_filtered_x1000;
 	ui8_adc_battery_current_max_temp_2 = ui32_battery_current_max_x100 / BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100;
 
 	// set max battery current in offroad mode
 	ui8_adc_battery_current_max_array[OFFROAD_MODE] = ui8_min(ui8_adc_battery_current_max_temp_1, ui8_adc_battery_current_max_temp_2);
 
 	// calculate max adc battery current from the received power limit in street mode
-	ui32_battery_current_max_x100 = (STREET_MODE_POWER_LIMIT_DIV25 * 2500000)
-		/ ui16_battery_voltage_filtered_x1000;
+	ui32_battery_current_max_x100 = (uint32_t)STREET_MODE_POWER_LIMIT * 100 * 1000 / ui16_battery_voltage_filtered_x1000;
 	ui8_adc_battery_current_max_temp_2 = ui32_battery_current_max_x100 / BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100;
 
 	// set max battery current in street mode
