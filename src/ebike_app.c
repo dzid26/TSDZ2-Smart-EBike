@@ -336,7 +336,7 @@ void ebike_app_init(void)
 	ui16_battery_SOC_percentage_x10 = ((uint16_t) m_configuration_variables.ui8_battery_SOC_percentage_8b) << 2;
 		 
 	// battery SOC checked at power on
-	if (ui16_battery_SOC_percentage_x10) {
+	if (ui16_battery_SOC_percentage_x10 > 0U) {
 		// calculate watt-hours x10 at power on
 		ui32_wh_x10_offset = ((uint32_t)(1000 - ui16_battery_SOC_percentage_x10) * ui16_actual_battery_capacity) / 100;
 		
@@ -481,7 +481,7 @@ static void ebike_control_motor(void)
 	#if FIELD_WEAKENING_ENABLED
 	if ((ui16_motor_speed_erps > MOTOR_SPEED_FIELD_WEAKENING_MIN)
 		&& (ui8_adc_battery_current_filtered < ui8_controller_adc_battery_current_target)
-		&& (!ui8_adc_throttle_assist)) {
+		&& (ui8_adc_throttle_assist == 0U)) {
 			ui8_field_weakening_erps_delta = ui16_motor_speed_erps - MOTOR_SPEED_FIELD_WEAKENING_MIN;
 			ui8_fw_hall_counter_offset_max = ui8_field_weakening_erps_delta >> 5;
 			if (ui8_fw_hall_counter_offset_max > FW_HALL_COUNTER_OFFSET_MAX) {
@@ -541,8 +541,8 @@ static void ebike_control_motor(void)
 	  ||(ui8_system_state == ERROR_BATTERY_OVERCURRENT)
 	  ||(ui8_battery_SOC_saved_flag)
 	  ||(!ui8_motor_enabled)
-	  ||(!ui8_assist_level)
-	  ||(!ui8_riding_mode_parameter)
+	  ||(ui8_assist_level == OFF)
+	  ||(ui8_riding_mode_parameter == 0U)
 	  ||((ui8_system_state != NO_ERROR)&&(!m_configuration_variables.ui8_assist_with_error_enabled))) {
         ui8_controller_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_DEFAULT;
         ui8_controller_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_MIN;
@@ -588,14 +588,14 @@ static void ebike_control_motor(void)
 		&& ((ui8_system_state == ERROR_BATTERY_OVERCURRENT)
 			|| (ui8_battery_SOC_saved_flag)
 			|| ((ui16_motor_speed_erps == 0)
-				&& (!ui8_adc_battery_current_target)
-				&& (!ui8_g_duty_cycle)))) {
+				&& (ui8_adc_battery_current_target == 0U)
+				&& (ui8_g_duty_cycle == 0U)))) {
         ui8_motor_enabled = 0;
         motor_disable_pwm();
     }
 	else if (!ui8_motor_enabled
 			&& (ui16_motor_speed_erps < 50) // enable the motor only if it rotates slowly or is stopped
-			&& (ui8_adc_battery_current_target)
+			&& (ui8_adc_battery_current_target > 0U)
 			&& (!ui8_brake_state)) {
 		ui8_motor_enabled = 1;
 		ui8_g_duty_cycle = PWM_DUTY_CYCLE_STARTUP;
@@ -655,7 +655,7 @@ static void apply_startup_boost(void)
 			ui8_startup_boost_flag = 1;
 			break;
 		case SPEED:
-			if (!ui16_wheel_speed_x10) {
+			if (ui16_wheel_speed_x10 == 0U) {
 				ui8_startup_boost_flag = 1;
 			}
 			else if (ui8_pedal_cadence_RPM > 45) {
@@ -674,7 +674,7 @@ static void apply_startup_boost(void)
 // calculate smooth start & new pedal torque delta
 static void apply_smooth_start(void)
 {
-	if ((!ui8_pedal_cadence_RPM)&&(!ui16_motor_speed_erps)) {
+	if ((ui8_pedal_cadence_RPM == 0U)&&(ui16_motor_speed_erps == 0U)) {
 		ui8_smooth_start_flag = 1;
 		ui8_smooth_start_counter = ui8_smooth_start_counter_set;
 	}
@@ -703,7 +703,7 @@ static void apply_power_assist(void)
 	
 	// check for assist without pedal rotation when there is no pedal rotation
 	if (m_configuration_variables.ui8_assist_without_pedal_rotation_enabled) {
-		if ((!ui8_pedal_cadence_RPM) &&
+		if ((ui8_pedal_cadence_RPM == 0U) &&
 		   (ui16_adc_pedal_torque_delta > (120 - ui8_assist_without_pedal_rotation_threshold))) {
 				ui8_pedal_cadence_RPM = 1;
 		}
@@ -783,7 +783,7 @@ static void apply_torque_assist(void)
 	
 	// check for assist without pedal rotation when there is no pedal rotation
 	if (m_configuration_variables.ui8_assist_without_pedal_rotation_enabled) {
-		if ((!ui8_pedal_cadence_RPM)&&
+		if ((ui8_pedal_cadence_RPM == 0U)&&
 			(ui16_adc_pedal_torque_delta > (120 - ui8_assist_without_pedal_rotation_threshold))) {
 				ui8_pedal_cadence_RPM = 1;
 		}
@@ -880,7 +880,7 @@ static void apply_emtb_assist(void)
 	
 	// check for assist without pedal rotation when there is no pedal rotation
 	if (m_configuration_variables.ui8_assist_without_pedal_rotation_enabled) {
-		if ((!ui8_pedal_cadence_RPM)&&
+		if ((ui8_pedal_cadence_RPM == 0U)&&
 			(ui16_adc_pedal_torque_delta > (120 - ui8_assist_without_pedal_rotation_threshold))) {
 				ui8_pedal_cadence_RPM = 1;
 		}
@@ -961,7 +961,7 @@ static void apply_hybrid_assist(void)
 	
 	// check for assist without pedal rotation when there is no pedal rotation
 	if (m_configuration_variables.ui8_assist_without_pedal_rotation_enabled) {
-		if ((!ui8_pedal_cadence_RPM)&&
+		if ((ui8_pedal_cadence_RPM == 0U)&&
 			(ui16_adc_pedal_torque_delta > (120 - ui8_assist_without_pedal_rotation_threshold))) {
 				ui8_pedal_cadence_RPM = 1;
 		}
@@ -969,7 +969,7 @@ static void apply_hybrid_assist(void)
 	
 	if ((ui8_pedal_cadence_RPM)||(ui8_startup_assist_adc_battery_current_target)) {
 		// calculate torque assistance
-		if (ui16_adc_pedal_torque_delta) {
+		if (ui16_adc_pedal_torque_delta > 0U) {
 			// get the torque assist factor
 			uint8_t ui8_torque_assist_factor = ui8_riding_mode_parameter_array[TORQUE_ASSIST_MODE - 1][ui8_assist_level];
 		
@@ -1198,7 +1198,7 @@ static void apply_walk_assist(void)
 		ui8_walk_assist_speed_target_x10 = ui8_riding_mode_parameter;
 		
 		// set walk assist duty cycle target
-		if ((!ui8_walk_assist_speed_flag)&&(!ui16_motor_speed_erps)) {
+		if ((!ui8_walk_assist_speed_flag) && (ui16_motor_speed_erps == 0U)) {
 			ui8_walk_assist_duty_cycle_target = WALK_ASSIST_DUTY_CYCLE_STARTUP;
 			ui8_walk_assist_duty_cycle_max = WALK_ASSIST_DUTY_CYCLE_STARTUP;
 			ui16_walk_assist_wheel_speed_counter = 0;
@@ -1255,7 +1255,7 @@ static void apply_walk_assist(void)
 			ui8_walk_assist_adj_delay = WALK_ASSIST_ADJ_DELAY_STARTUP;
 			
 			if (ui8_walk_assist_duty_cycle_counter++ > ui8_walk_assist_adj_delay) {
-				if (ui16_wheel_speed_x10) {
+				if (ui16_wheel_speed_x10 > 0U) {
 					if (ui16_wheel_speed_x10 > WALK_ASSIST_WHEEL_SPEED_MIN_DETECT_X10) {
 						ui8_walk_assist_duty_cycle_target--;
 					}
@@ -1349,13 +1349,13 @@ static void apply_throttle(void)
 	// throttle mode pedaling
 	switch (ui8_throttle_mode_array[m_configuration_variables.ui8_street_mode_enabled]) {
         case PEDALING:
-			if (!ui8_pedal_cadence_RPM) {
+			if (ui8_pedal_cadence_RPM == 0U) {
 				ui8_adc_throttle_assist = 0;
 			}
           break;
         case W_O_P_6KM_H_AND_PEDALING:
 			if ((ui16_wheel_speed_x10 > WALK_ASSIST_THRESHOLD_SPEED_X10)
-			  &&(!ui8_pedal_cadence_RPM)) {
+			  &&(ui8_pedal_cadence_RPM == 0U)) {
 				ui8_adc_throttle_assist = 0;
 			}
           break;
@@ -1455,7 +1455,7 @@ static void apply_speed_limit(void)
 static void calc_wheel_speed(void)
 {
     // calc wheel speed (km/h x10)
-    if (ui16_wheel_speed_sensor_ticks) {
+    if (ui16_wheel_speed_sensor_ticks > 0U) {
         uint16_t ui16_tmp = ui16_wheel_speed_sensor_ticks;
         // rps = PWM_CYCLES_SECOND / ui16_wheel_speed_sensor_ticks (rev/sec)
         // km/h*10 = rps * ui16_wheel_perimeter * ((3600 / (1000 * 1000)) * 10)
@@ -1482,7 +1482,7 @@ static void calc_cadence(void)
 
     // calculate cadence in RPM and avoid zero division
     // !!!warning if PWM_CYCLES_SECOND > 21845
-    if (ui16_cadence_sensor_ticks_temp) {
+    if (ui16_cadence_sensor_ticks_temp > 0U) {
         ui8_pedal_cadence_RPM = (uint8_t)((PWM_CYCLES_SECOND * 3U) / ui16_cadence_sensor_ticks_temp);
 		
 		if (ui8_pedal_cadence_RPM > 120) {
@@ -1712,7 +1712,7 @@ static uint8_t ui8_motor_check_time_goes_alone = 0;
 	// check cadence sensor
 	if ((ui16_adc_pedal_torque_delta_no_boost > ADC_TORQUE_SENSOR_DELTA_THRESHOLD)
 	  &&(!ui8_startup_assist_flag)&&(ui8_riding_torque_mode)
-	  &&((ui8_pedal_cadence_RPM > 130)||(!ui8_pedal_cadence_RPM))) {
+	  &&((ui8_pedal_cadence_RPM > 130) || (ui8_pedal_cadence_RPM == 0U))) {
 		ui8_check_cadence_sensor_counter++;
 	}
 	else {
@@ -1755,7 +1755,7 @@ static uint8_t ui8_motor_check_time_goes_alone = 0;
 		ui16_check_speed_sensor_counter = 0;
 	}
 	
-	if (ui16_wheel_speed_x10) {
+	if (ui16_wheel_speed_x10 > 0U) {
 		ui16_check_speed_sensor_counter = 0;
 	}
 	
@@ -3052,7 +3052,7 @@ static void uart_send_package(void)
 				ui16_display_data = (uint16_t) ui16_display_data_factor / ui16_battery_SOC_percentage_x10;
 				#endif
 			}
-			else if ((ui8_display_data_on_startup)&&(ui8_startup_counter < DELAY_MENU_ON)&&(ui8_assist_level != TURBO)&&(!ui8_menu_index)) {
+			else if ((ui8_display_data_on_startup)&&(ui8_startup_counter < DELAY_MENU_ON)&&(ui8_assist_level != TURBO)&&(ui8_menu_index == 0U)) {
 			  switch (ui8_display_data_on_startup) {
 				case 1:
 					#if UNITS_TYPE == MILES
@@ -3191,7 +3191,7 @@ static void uart_send_package(void)
 		}
 		else {
 			// wheel speed
-			if (ui16_oem_wheel_speed_time) {
+			if (ui16_oem_wheel_speed_time > 0U) {
 				#if ALTERNATIVE_MILES
 				// in VLCD6 display the km/miles conversion is not present.
 				// alternative mph for VLCD6 converts the sent speed time
@@ -3220,7 +3220,7 @@ static void uart_send_package(void)
 		
 		#if ENABLE_DISPLAY_WORKING_FLAG
 		// wheel turning
-		if (ui16_oem_wheel_speed_time) {
+		if (ui16_oem_wheel_speed_time > 0U) {
 			// bit7 = 1 (wheel turning)
 			ui8_working_status |= 0x80;
 		}
@@ -3279,7 +3279,7 @@ static void calc_oem_wheel_speed(void)
 		uint32_t ui32_oem_wheel_perimeter;
 			
 		// calc oem wheel speed (wheel turning time)
-		if (ui16_wheel_speed_sensor_ticks) {
+		if (ui16_wheel_speed_sensor_ticks > 0U) {
 			ui32_oem_wheel_speed_time = ((uint32_t) ui16_wheel_speed_sensor_ticks * 10) / OEM_WHEEL_SPEED_DIVISOR;
 			
 			// speed conversion for different perimeter			
@@ -3301,7 +3301,7 @@ static void calc_oem_wheel_speed(void)
 	uint16_t ui16_speed_difference;
 
 	// calc wheel speed  mm/0.1 sec
-	if (ui16_oem_wheel_speed_time) {
+	if (ui16_oem_wheel_speed_time > 0U) {
 		ui16_wheel_speed = (uint16_t)((ui16_display_data_factor / ui16_oem_wheel_speed_time) * ((uint16_t) 100 / 36));
 	}
 	else {
