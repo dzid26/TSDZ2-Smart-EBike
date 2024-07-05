@@ -10,6 +10,7 @@
 #define EBIKE_APP_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // Task period for ebike_app_controller (ms) - defines the main control loop rate
 #define EBIKE_TASK_MS                                   25U
@@ -23,6 +24,9 @@
 extern volatile uint8_t ui8_display_fault_code;
 extern volatile uint8_t ui8_system_state;
 
+
+// pedals are loaded
+extern volatile bool pedals_torque_loaded;
 
 // Torque sensor coaster brake engaged threshold value
 extern volatile uint16_t ui16_adc_coaster_brake_threshold;
