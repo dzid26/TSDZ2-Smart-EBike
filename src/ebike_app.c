@@ -1656,31 +1656,27 @@ static void check_system(void)
 #define MOTOR_CHECK_TIME_GOES_ALONE_TRESHOLD         	80 // 80 * 100ms = 8.0 seconds
 #define MOTOR_CHECK_ERPS_THRESHOLD                  	20 // 20 ERPS
 static uint8_t ui8_riding_torque_mode = 0;
-static uint8_t ui8_motor_check_time_goes_alone = 0;
+static uint8_t ui8_motor_check_goes_alone_timer = 0U;
 	
 	// riding modes that use the torque sensor
 	if (((m_configuration_variables.ui8_riding_mode == POWER_ASSIST_MODE)
-	  ||(m_configuration_variables.ui8_riding_mode == TORQUE_ASSIST_MODE)
-	  ||(m_configuration_variables.ui8_riding_mode == HYBRID_ASSIST_MODE)
-	  ||(m_configuration_variables.ui8_riding_mode == eMTB_ASSIST_MODE))
-	  && (!ui8_adc_throttle_assist)) {
+		||(m_configuration_variables.ui8_riding_mode == TORQUE_ASSIST_MODE)
+		||(m_configuration_variables.ui8_riding_mode == HYBRID_ASSIST_MODE)
+		||(m_configuration_variables.ui8_riding_mode == eMTB_ASSIST_MODE))
+	  && (ui8_adc_throttle_assist == 0U)) {
 		ui8_riding_torque_mode = 1;
-	}
-	else {
+	} else {
 		ui8_riding_torque_mode = 0;
 	}
 	// Check if the motor goes alone and with current or duty cycle target = 0 (safety)
 	if ((ui16_motor_speed_erps > MOTOR_CHECK_ERPS_THRESHOLD)
-	  &&((ui8_riding_torque_mode)
-		||(m_configuration_variables.ui8_riding_mode == CADENCE_ASSIST_MODE))){
-			if ((!ui8_adc_battery_current_target || !ui8_duty_cycle_target)) {
-				ui8_motor_check_time_goes_alone++;
-			}
+	  	&&((ui8_riding_torque_mode)	|| (m_configuration_variables.ui8_riding_mode == CADENCE_ASSIST_MODE))
+		&& (ui8_adc_battery_current_target == 0U || ui8_duty_cycle_target == 0U)) {
+			ui8_motor_check_goes_alone_timer++;
+	} else {
+		ui8_motor_check_goes_alone_timer = 0;
 	}
-	else {
-		ui8_motor_check_time_goes_alone = 0;
-	}
-	if (ui8_motor_check_time_goes_alone > MOTOR_CHECK_TIME_GOES_ALONE_TRESHOLD) {
+	if (ui8_motor_check_goes_alone_timer > MOTOR_CHECK_TIME_GOES_ALONE_TRESHOLD) {
 		ui8_system_state = ERROR_MOTOR_CHECK;
 	}
 	
