@@ -554,7 +554,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
         */
 
             ld a, _ui8_temp+0     // ui8_svm_table_index is stored in ui8_temp
-            add a, #0x55        // ui8_temp = ui8_svm_table[(uint8_t) (ui8_svm_table_index + 85 /* 120ยบ */)];
+            add a, #0x55        // ui8_temp = ui8_svm_table[(uint8_t) (ui8_svm_table_index + 85); /* 120deg */];
             clrw x
             ld  xl, a
             ld  a, (_ui8_svm_table+0, x)
