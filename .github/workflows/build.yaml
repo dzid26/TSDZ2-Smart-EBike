@@ -103,6 +103,7 @@ jobs:
         run: |
           pip install -e .
           pip install --upgrade pytest-md-report
+          pip install gcovr
       - name: Run tests
         env:
           REPORT_OUTPUT: md_report.md
@@ -111,7 +112,7 @@ jobs:
           rm tests/sim/_tsdz2.cdef # make sure cdef is generated from the source to check testing framework
 
           echo "REPORT_FILE=${REPORT_OUTPUT}" >> "$GITHUB_ENV"
-          pytest --md-report --md-report-flavor gfm --md-report-output "$REPORT_OUTPUT"
+          pytest --coverage --md-report --md-report-flavor gfm --md-report-output "$REPORT_OUTPUT"
       - name: Output reports to the job summary
         if: always()
         shell: bash
@@ -131,6 +132,16 @@ jobs:
           header: test-report
           recreate: true
           path: ${{ env.REPORT_FILE }}
+      - name: Collect coverage data
+        run: |
+          echo "### Coverage Report" >> $GITHUB_STEP_SUMMARY
+          gcovr -r tests --print-summary >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage_report
+          path: |
+            tests/coverage_report.html
 
   Compare_builds:
     needs: [Build_Windows, Build_Linux]

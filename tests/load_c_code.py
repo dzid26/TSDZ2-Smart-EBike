@@ -149,12 +149,12 @@ def generate_cdef(module_name, src_file):
         fp.write(cdef)
     return cdef
 
-
-def load_code(module_name, force_recompile=False):
+def load_code(module_name, coverage=False, force_recompile=False):
     # Load previous combined hash
     hash_file_path = os.path.join(LIB_DIR, f"{module_name}.sha")
+    # Recalculate hash if code or arguments have changed
     with Checksum(hash_file_path, source_dirs, module_name+"".join(define_macros)) as skip:
-        if not skip or force_recompile:
+        if not skip or force_recompile or coverage: # also recompile if coverage is enabled because backround test runners are compiling without gcov
             print("Collecting source code..")
             source_content_list: List[str] = []
             source_files = [os.path.abspath(os.path.join(dir, file)) for dir in source_dirs for file in os.listdir(dir) if file.endswith('.c')]
@@ -166,7 +166,6 @@ def load_code(module_name, force_recompile=False):
             combined_source = fake_defines + combined_source
             combined_source = re.sub(r"#\s*include\s*<.*?>", r"//\g<0>", combined_source) # comment out standard includes
             combined_source_file_path = os.path.join(LIB_DIR, f"{module_name}.i")
-            
             with open(combined_source_file_path, "w", encoding="utf8") as fp:
                 fp.write(combined_source)
             try:
@@ -175,7 +174,20 @@ def load_code(module_name, force_recompile=False):
                 print(f"{e}\n\033[93mFailed to generate cdef using your cpp standard headers!!!\nYou may have to edit it manually. Continuing...\033[0m")
                 with open(os.path.join(LIB_DIR, f"{module_name}.cdef"), "r", encoding="utf8") as fp:
                     cdef = fp.read()
-            
+            extra_compile_args = compiler_args
+            extra_link_args = linker_args
+            # Coverage
+            if coverage:
+                # expose gcov api, (will not work with microsoft compiler)
+                cdef += "\n" + "extern void __gcov_reset(void);"
+                cdef += "\n" + "extern void __gcov_dump(void);"
+                # add inner coverage exclusion markers
+                combined_source = "extern void __gcov_reset(void);\n" + combined_source
+                combined_source = "extern void __gcov_dump(void);\n" + combined_source
+                combined_source =  "// GCOVR_EXCL_STOP\n" + combined_source + "\n// GCOVR_EXCL_START"
+                extra_compile_args += ["--coverage"]
+                extra_link_args +=    ["--coverage"]
+
             # Create a CFFI instance
             ffibuilder = cffi.FFI()
             print("Processing cdefs...")
@@ -183,19 +195,24 @@ def load_code(module_name, force_recompile=False):
             ffibuilder.set_source(module_name, combined_source,
                                 include_dirs=[os.path.abspath(d) for d in include_dirs], 
                                 define_macros=[(macro, None) for macro in define_macros],
-                                extra_compile_args=compiler_args,
-                                extra_link_args=linker_args
+                                extra_compile_args=extra_compile_args,
+                                extra_link_args=extra_link_args
                                 )
             print("Compiling...")
             ffibuilder.compile(tmpdir=LIB_DIR)
+            if coverage: # Add outer coverage exclusion markers after generating ffi api c-code
+                with open(os.path.join(LIB_DIR, f"{module_name}.c"), "r+", encoding="utf8") as fp:
+                        c = fp.readlines() # add inline comments because it may matter for gcov to keep the number of lines, idk:
+                        c[0] = c[0].strip() + " // GCOVR_EXCL_START"
+                        c[-1] = c[-1].strip() + " // GCOVR_EXCL_STOP"
+                        fp.seek(0); fp.writelines(c); fp.truncate()
         else:
             print("No changes found. Skipping compilation")
-
 
     module_path = LIB_DIR.replace("/", ".") + module_name
     print(f"Loading module: {module_path}")
     module = importlib.import_module(module_path)
-    module_ffi : cffi.FFI = module.ffi
+    module_ffi : cffi.FFI = module.ffi # adds typing
     return module.lib, module_ffi
 
 

@@ -73,6 +73,8 @@ Run tests:
 
 `pytest`
 
+Calculate coverage and generate html report (probably will not work on Windows):
+`pytest --coverage`
 
 
 ### Compile the firmware manually
