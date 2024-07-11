@@ -60,6 +60,7 @@
 
 		{
 			"label": "Launch OpenOCD",
+			"hide": true,
 			"type": "shell",
 			"command": "openocd",
 			"args": [
@@ -143,6 +144,33 @@
 				"exit",
 			],
 			"problemMatcher": [],
-		}
+		},
+		{	//stm8 simulator doesn't  to be supported by sdcdb though
+			"label": "Load main into simulator", 
+			"type": "process",
+			"presentation": {
+				"reveal": "always",
+				"focus": false,
+				"panel": "dedicated",
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"command": "ucsim_stm8",
+			"options": {
+				"cwd": "${workspaceFolder}",
+			},
+			"runOptions": {
+				"instanceLimit": 1,
+			},
+			"args": [
+				"-t", "stm8s105",
+				// -S option to connect system serial to simulator uart
+				"-B",
+				"-e", "run", //start simualtion
+				// type break ebike_app_init or any other address to set a breakpoint
+				"bin/main",
+			],
+			"problemMatcher": [],
+		},
 	],
 }
