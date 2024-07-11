@@ -6,9 +6,10 @@
  * Released under the GPL License, Version 3
  */
 
-#ifndef _MAIN_H_
-#define _MAIN_H_
+#ifndef MAIN_H_
+#define MAIN_H_
 
+#include <stdint.h>
 #include "config.h"
 #include "common.h"
 

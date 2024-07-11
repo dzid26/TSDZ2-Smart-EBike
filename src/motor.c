@@ -7,7 +7,7 @@
  */
 
 #include <stdint.h>
-#include <math.h>
+#include "main.h"
 #include "motor.h"
 #include "main.h"
 #include "interrupts.h"
@@ -15,10 +15,6 @@
 #include "stm8s_tim1.h"
 #include "ebike_app.h"
 #include "pins.h"
-#include "pwm.h"
-#include "adc.h"
-#include "uart.h"
-#include "common.h"
 #include "eeprom.h"
 
 #define SVM_TABLE_LEN   256

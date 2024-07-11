@@ -6,11 +6,8 @@
  * Released under the GPL License, Version 3
  */
 
-#include <stdint.h>
-
+#include "uart.h"
 #include "stm8s.h"
-#include "stm8s_uart2.h"
-#include "main.h"
 #include "interrupts.h"
 
 
