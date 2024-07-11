@@ -11,7 +11,10 @@ def pytest_sessionstart(session):
     Called after the Session object has been created and
     before performing collection and entering the run test loop.
     """
-    lib, _ = load_code('_tsdz2', coverage=session.config.option.coverage, force_recompile=session.config.option.force)
+    lib, _ = load_code('_tsdz2',
+        coverage=session.config.option.coverage,
+        force_recompile=session.config.option.force,
+        strict=session.config.option.strict)
     if session.config.option.coverage:
         lib.__gcov_reset()
 

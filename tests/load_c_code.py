@@ -149,12 +149,12 @@ def generate_cdef(module_name, src_file):
         fp.write(cdef)
     return cdef
 
-def load_code(module_name, coverage=False, force_recompile=False):
+def load_code(module_name, coverage=False, force_recompile=False, strict=False):
     # Load previous combined hash
     hash_file_path = os.path.join(LIB_DIR, f"{module_name}.sha")
     # Recalculate hash if code or arguments have changed
     with Checksum(hash_file_path, source_dirs, module_name+"".join(define_macros)) as skip:
-        if not skip or force_recompile or coverage: # also recompile if coverage is enabled because backround test runners are compiling without gcov
+        if not skip or force_recompile or coverage or strict: # also recompile if coverage is enabled because backround test runners are compiling without gcov
             print("Collecting source code..")
             source_content_list: List[str] = []
             source_files = [os.path.abspath(os.path.join(dir, file)) for dir in source_dirs for file in os.listdir(dir) if file.endswith('.c')]
@@ -187,11 +187,13 @@ def load_code(module_name, coverage=False, force_recompile=False):
                 combined_source =  "// GCOVR_EXCL_STOP\n" + combined_source + "\n// GCOVR_EXCL_START"
                 extra_compile_args += ["--coverage"]
                 extra_link_args +=    ["--coverage"]
-
+            if strict:
+                extra_compile_args += ["-Werror"]
             # Create a CFFI instance
             ffibuilder = cffi.FFI()
             print("Processing cdefs...")
             ffibuilder.cdef(cdef)
+            print("Compiler args:", extra_compile_args, *include_dirs)
             ffibuilder.set_source(module_name, combined_source,
                                 include_dirs=[os.path.abspath(d) for d in include_dirs], 
                                 define_macros=[(macro, None) for macro in define_macros],

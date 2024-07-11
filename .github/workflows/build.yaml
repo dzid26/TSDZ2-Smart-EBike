@@ -89,7 +89,7 @@ jobs:
 
 
   Tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     permissions:
       contents: read
       pull-requests: write
@@ -112,7 +112,10 @@ jobs:
           rm tests/sim/_tsdz2.cdef # make sure cdef is generated from the source to check testing framework
 
           echo "REPORT_FILE=${REPORT_OUTPUT}" >> "$GITHUB_ENV"
-          pytest --coverage --md-report --md-report-flavor gfm --md-report-output "$REPORT_OUTPUT"
+
+          gcc -Wall -Wextra -Q --help=warning # print warnings that shouldbe enabled by pytest --strict
+
+          pytest --strict --coverage --md-report --md-report-flavor gfm --md-report-output "$REPORT_OUTPUT"
       - name: Output reports to the job summary
         if: always()
         shell: bash
