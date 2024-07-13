@@ -2291,13 +2291,13 @@ static void uart_receive_package(void)
 										m_configuration_variables.ui8_startup_boost_enabled = ui8_startup_boost_enabled_temp;
 										ui8_display_function_status[1][ECO] = m_configuration_variables.ui8_startup_boost_enabled;
 									
-										if (ui8_display_torque_sensor_flag_2) {
+										if (ui8_display_torque_sensor_flag_2) { // cppcheck-suppress knownConditionTrueFalse
 											// set display torque sensor step for calibration
 											ui8_display_torque_sensor_step = 1;
 											// delay display torque sensor step for calibration
 											ui8_delay_display_function = DELAY_DISPLAY_TORQUE_CALIBRATION;
 										}
-										else if (ui8_display_torque_sensor_flag_1) {
+										else if (ui8_display_torque_sensor_flag_1) { // cppcheck-suppress knownConditionTrueFalse
 											// restore torque sensor advanced
 											m_configuration_variables.ui8_torque_sensor_adv_enabled = ui8_torque_sensor_adv_enabled_temp;
 											ui8_display_function_status[2][ECO] = m_configuration_variables.ui8_torque_sensor_adv_enabled;
@@ -2314,7 +2314,7 @@ static void uart_receive_package(void)
 							case TURBO:	
 								switch (ui8_menu_index) {
 									case 2:
-										if (ui8_lights_configuration_2 == 9) {
+										if (ui8_lights_configuration_2 == 9) { // cppcheck-suppress knownConditionTrueFalse
 											// restore previous lights configuration
 											m_configuration_variables.ui8_lights_configuration = ui8_lights_configuration_temp;
 											ui8_display_lights_configuration = m_configuration_variables.ui8_lights_configuration;
@@ -2323,7 +2323,7 @@ static void uart_receive_package(void)
 										}
 										break;
 									case 3:
-										if (ui8_lights_configuration_2 == 9) {
+										if (ui8_lights_configuration_2 == 9) { // cppcheck-suppress knownConditionTrueFalse
 											// restore previous assist without pedal rotation
 											m_configuration_variables.ui8_assist_without_pedal_rotation_enabled = ui8_assist_without_pedal_rotation_temp;
 											ui8_display_function_status[1][TURBO] = m_configuration_variables.ui8_assist_without_pedal_rotation_enabled;
@@ -2334,7 +2334,7 @@ static void uart_receive_package(void)
 											ui8_display_lights_configuration = m_configuration_variables.ui8_lights_configuration;
 										}
 										
-										if (ui8_lights_configuration_3 == 10) {
+										if (ui8_lights_configuration_3 == 10) { // cppcheck-suppress knownConditionTrueFalse
 											// display status
 											ui8_display_alternative_lights_configuration = 1;
 										}

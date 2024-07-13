@@ -145,6 +145,36 @@ jobs:
           name: coverage_report
           path: |
             tests/coverage_report.html
+  
+  Static-analysis:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install cppcheck
+      - name: Install cppcheck
+        shell: bash
+        run: |
+          git clone https://github.com/danmar/cppcheck.git
+          cd cppcheck
+          git fetch --all --tags --force
+          git checkout 2.14.2
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
+          sudo make install
+          cppcheck --version
+      - name: Run cppcheck
+        shell: bash
+        run: |
+          cppcheck src --enable=all --check-level=exhaustive --force --std=c99 -Isrc\STM8S_StdPeriph_Lib\inc -iSTM8S_StdPeriph_Lib --suppress=missingIncludeSystem --suppress=variableScope  -DSTM8S105 -DHSE_Value=16000000 -D_SDCC_ -DUSE_STDPERIPH_DRIVER -USTM8AF52Ax -USTM8AF622x -USTM8AF626x -USTM8AF62Ax -USTM8S003 -USTM8S005 -USTM8S007 -USTM8S103 -USTM8S207 -USTM8S208 -USTM8S903 -U__CSMC__ -U__ICCSTM8__ -U__RCST7__ -U__CDT_PARSER__  -URAM_EXECUTION -UHALL_DEBUG -UTIME_DEBUG  -UUSE_FULL_ASSERT 2>/dev/null
+
 
   Compare_builds:
     needs: [Build_Windows, Build_Linux]

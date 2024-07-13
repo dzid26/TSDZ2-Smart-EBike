@@ -108,7 +108,7 @@ int main(void) {
             ebike_app_controller();
 
             #ifdef TIME_DEBUG
-            ui8_main_time = ui8_tim4_counter - ui8_main_time
+            ui8_main_time = ui8_tim4_counter - ui8_main_time;
             if (ui8_main_time > ui8_max_ebike_time) {
                 ui8_max_ebike_time = ui8_main_time;
 			}
