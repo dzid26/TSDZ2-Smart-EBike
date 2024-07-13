@@ -1527,15 +1527,20 @@ static void apply_temperature_limiting(void)
 }
 
 
-static void apply_speed_limit(void)
-{
-    if (m_configuration_variables.ui8_wheel_speed_max) {
-        // set battery current target
-        ui8_adc_battery_current_target = map_ui16((uint16_t) ui16_wheel_speed_x10,
-                (uint16_t) (((uint8_t)(m_configuration_variables.ui8_wheel_speed_max) * (uint8_t)10U) - (uint8_t)20U),
-                (uint16_t) (((uint8_t)(m_configuration_variables.ui8_wheel_speed_max) * (uint8_t)10U) + (uint8_t)20U),
+static void apply_speed_limit(void) {
+    if (m_configuration_variables.ui8_wheel_speed_max > 0U) {
+		uint16_t speed_limit_low  = (uint16_t)((uint8_t)(m_configuration_variables.ui8_wheel_speed_max - 2U) * (uint8_t)10U); // casting literal to uint8_t ensures usage of MUL X,A
+		uint16_t speed_limit_high = (uint16_t)((uint8_t)(m_configuration_variables.ui8_wheel_speed_max + 2U) * (uint8_t)10U);
+
+        ui8_adc_battery_current_target = (uint8_t)map_ui16(ui16_wheel_speed_x10,
+                speed_limit_low,
+                speed_limit_high,
                 ui8_adc_battery_current_target,
-                0);
+                0U);
+		
+		if (ui16_wheel_speed_x10 > speed_limit_high) {
+			ui8_duty_cycle_target = 0;
+		}
     }
 }
 
