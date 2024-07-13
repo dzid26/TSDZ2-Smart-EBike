@@ -1032,7 +1032,7 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER) {
     }
 	
 	// save percentage remaining battery capacity at shutdown
-	struct_configuration_variables *p_configuration_variables;
+	const struct_configuration_variables *p_configuration_variables;
     p_configuration_variables = get_configuration_variables();
 	
 	if ((ui16_adc_voltage < ADC_10_BIT_BATTERY_VOLTAGE_SHUTDOWN)

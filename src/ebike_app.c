@@ -2441,13 +2441,13 @@ static void uart_receive_package(void)
 							case TURBO:	
 								switch (ui8_menu_index) {
 									case 1:
-										if (ui8_lights_configuration_1 == 11) {
+										if (ui8_lights_configuration_1 == 11) { // cppcheck-suppress knownConditionTrueFalse
 											// display status
 											ui8_display_alternative_lights_configuration = 1;
 										}
 										break;
 									case 2:
-										if (ui8_lights_configuration_1 == 11) {
+										if (ui8_lights_configuration_1 == 11) { // cppcheck-suppress knownConditionTrueFalse
 											// restore previous startup assist enabled
 											m_configuration_variables.ui8_startup_assist_enabled = ui8_startup_assist_enabled_temp;
 											ui8_display_function_status[0][TURBO] = m_configuration_variables.ui8_startup_assist_enabled;
@@ -2456,13 +2456,13 @@ static void uart_receive_package(void)
 											// restore previous lights configuration
 											m_configuration_variables.ui8_lights_configuration = ui8_lights_configuration_temp;
 										}
-										if (ui8_lights_configuration_2 == 9) {
+										if (ui8_lights_configuration_2 == 9) { // cppcheck-suppress knownConditionTrueFalse
 											// display status
 											ui8_display_alternative_lights_configuration = 1;
 										}
 										break;
 									case 3:
-										if (ui8_lights_configuration_2 == 9) {
+										if (ui8_lights_configuration_2 == 9) { // cppcheck-suppress knownConditionTrueFalse
 											// restore previous assist without pedal rotation
 											m_configuration_variables.ui8_assist_without_pedal_rotation_enabled = ui8_assist_without_pedal_rotation_temp;
 											ui8_display_function_status[1][TURBO] = m_configuration_variables.ui8_assist_without_pedal_rotation_enabled;
@@ -2472,7 +2472,7 @@ static void uart_receive_package(void)
 											m_configuration_variables.ui8_lights_configuration = ui8_lights_configuration_temp;
 										}
 										
-										if (ui8_lights_configuration_3 == 10) {
+										if (ui8_lights_configuration_3 == 10) { // cppcheck-suppress knownConditionTrueFalse
 											// display status
 											ui8_display_alternative_lights_configuration = 1;
 										}
@@ -2655,7 +2655,7 @@ static void uart_receive_package(void)
 							// set lights mode
 							switch (ui8_menu_index) {
 								case 1:
-									if (ui8_lights_configuration_1 == 11) {
+									if (ui8_lights_configuration_1 == 11) { // cppcheck-suppress knownConditionTrueFalse
 										// for restore startup assist enabled
 										ui8_startup_assist_enabled_temp = m_configuration_variables.ui8_startup_assist_enabled;
 										// change startup assist enabled
@@ -2677,7 +2677,7 @@ static void uart_receive_package(void)
 									}
 									break;
 								case 2:
-									if (ui8_lights_configuration_2 == 9) {
+									if (ui8_lights_configuration_2 == 9) { // cppcheck-suppress knownConditionTrueFalse
 										// for restore assist without pedal rotation
 										ui8_assist_without_pedal_rotation_temp = m_configuration_variables.ui8_assist_without_pedal_rotation_enabled;
 										// change assist without pedal rotation
@@ -2699,7 +2699,7 @@ static void uart_receive_package(void)
 									}
 									break;
 								case 3:
-									if (ui8_lights_configuration_3 == 10) {
+									if (ui8_lights_configuration_3 == 10) { // cppcheck-suppress knownConditionTrueFalse
 										// change system error enabled
 										m_configuration_variables.ui8_assist_with_error_enabled = !m_configuration_variables.ui8_assist_with_error_enabled;
 										ui8_display_function_status[2][TURBO] = m_configuration_variables.ui8_assist_with_error_enabled;
