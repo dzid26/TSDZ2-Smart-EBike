@@ -16,6 +16,7 @@ dependencies = [
     "cffi >=1.15.0",
     "setuptools",
     "numpy",
+    "hypothesis",
 ]
 
 [project.urls]
