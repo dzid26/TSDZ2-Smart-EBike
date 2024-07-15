@@ -38,6 +38,7 @@
 
 // ----------------------------------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------------------
+#define F_CPU                                           (HSI_VALUE / 1U)  //cpu frequency, based on HSI clock and 1x prescaler
 
 //#define PWM_FREQ										18 // 18 Khz
 #define PWM_FREQ										19 // 19 Khz
@@ -58,7 +59,7 @@
 #define OEM_WHEEL_SPEED_DIVISOR								363 // at 18 KHz
 #endif
 
-#define MOTOR_TASK_FREQ									((uint16_t)(HSE_VALUE / (PWM_COUNTER_MAX*2))) // 55.5us (PWM period) 18 Khz
+#define MOTOR_TASK_FREQ									((uint16_t)(F_CPU / (PWM_COUNTER_MAX*2))) // 55.5us (PWM period) 18 Khz
 
 /*---------------------------------------------------------
  NOTE: regarding duty cycle (PWM) ramping
