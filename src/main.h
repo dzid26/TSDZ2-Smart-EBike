@@ -16,6 +16,8 @@
 //#define TIME_DEBUG
 //#define HALL_DEBUG
 
+extern volatile uint8_t u8_isr_load_perc;
+
 //#define FW_VERSION 15 // mspider65
 
 /*---------------------------------------------------------
