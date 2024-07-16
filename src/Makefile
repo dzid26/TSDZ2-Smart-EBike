@@ -7,7 +7,7 @@
 .PHONY: all clean mkdir build
 
 #Compiler
-CC = sdcc --verbose
+CC = sdcc
 OBJCOPY = objcopy
 SIZE = stm8-size
 

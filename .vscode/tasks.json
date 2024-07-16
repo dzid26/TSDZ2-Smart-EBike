@@ -14,7 +14,7 @@
 				"clear": true
 			},
 			"args": [
-				"all"
+				"all", "-j", "--output-sync"
 			],
 			"options": {
 				"cwd": "${workspaceFolder}/src/"

@@ -10,7 +10,7 @@ PATH = %PATH%;%~dp0..\tools\cygwin_64\bin;C:\SDCC\usr\local\bin;C:\SDCC\bin;C:\%
 :BUILD
 echo Build started...
 timeout /t 2 > nul
-make all
+make -j4
 if errorlevel 1 goto FAIL
 
 :PASS
