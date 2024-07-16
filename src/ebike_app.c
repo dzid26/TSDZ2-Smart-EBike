@@ -418,7 +418,7 @@ void ebike_app_controller(void)
     get_battery_voltage();
 	
     // Calculate filtered Battery Current (Ampx10)
-    ui8_battery_current_filtered_x10 = (uint8_t)(((uint16_t) ui8_adc_battery_current_filtered * BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100) / 10);
+    ui8_battery_current_filtered_x10 = (uint8_t)(((uint16_t)(ui8_adc_battery_current_filtered * (uint8_t)BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100)) / 10U);
 	
 
 	get_motor_bemf();
@@ -1204,7 +1204,7 @@ static void apply_cruise(void)
 			i16_control_output = 0;
 			
 			// set cruise speed target
-			ui16_wheel_speed_target_x10 = (uint16_t) ui8_riding_mode_parameter_array[CRUISE_MODE - 1][ui8_assist_level] * 10;
+			ui16_wheel_speed_target_x10 = (uint16_t) (ui8_riding_mode_parameter_array[CRUISE_MODE - 1][ui8_assist_level] * (uint8_t)10);
 		}
 		
 		// calculate error
@@ -2769,7 +2769,7 @@ static void uart_receive_package(void)
 			// set assist parameter
 			ui8_riding_mode_parameter = ui8_riding_mode_parameter_array[m_configuration_variables.ui8_riding_mode - 1][ui8_assist_level];
 			if (ui8_assist_level_01_flag) {
-				ui8_riding_mode_parameter = (uint8_t)(((uint16_t) ui8_riding_mode_parameter * ASSIST_LEVEL_1_OF_5_PERCENT) / 100);
+				ui8_riding_mode_parameter = (uint8_t)(((uint16_t)(ui8_riding_mode_parameter * (uint8_t)ASSIST_LEVEL_1_OF_5_PERCENT)) / 100U);
 			}
 			
 			// automatic data display at lights on
@@ -3140,7 +3140,7 @@ static void uart_send_package(void)
 				ui16_display_data = (uint16_t) ui16_display_data_factor / (ui16_pedal_weight_x100 / 10);
 			}
 			else if (ui8_display_torque_sensor_step) {
-				ui16_display_data = (uint16_t) ui16_display_data_factor / (ui8_pedal_torque_per_10_bit_ADC_step_x100 * 10);
+				ui16_display_data = (uint16_t) ui16_display_data_factor / (ui8_pedal_torque_per_10_bit_ADC_step_x100 * (uint8_t)10);
 			}
 			else if (ui8_display_torque_sensor_value) {
 				ui16_display_data = (uint16_t) ui16_display_data_factor / ui16_adc_torque;
@@ -3159,10 +3159,10 @@ static void uart_send_package(void)
 			  }
 			}
 			else if ((ui8_menu_counter <= ui8_delay_display_function)&&(ui8_menu_index)&&(ui8_assist_level == TURBO)) {
-				ui16_display_data = (uint16_t) ui16_display_data_factor / (ui8_display_lights_configuration * 100 + DISPLAY_STATUS_OFFSET);
+				ui16_display_data = (uint16_t) ui16_display_data_factor / (ui8_display_lights_configuration * (uint8_t)100 + DISPLAY_STATUS_OFFSET);
 			}
 			else if ((ui8_menu_counter <= ui8_delay_display_function)&&(ui8_menu_index)) {
-				ui16_display_data = (uint16_t) ui16_display_data_factor / (ui8_display_riding_mode * 100 + DISPLAY_STATUS_OFFSET);
+				ui16_display_data = (uint16_t) ui16_display_data_factor / (ui8_display_riding_mode * (uint8_t)100 + DISPLAY_STATUS_OFFSET);
 			}
 			else {
 			  switch (ui8_data_index_array[ui8_data_index]) {
@@ -3205,7 +3205,7 @@ static void uart_send_package(void)
 				  break;
 				case 7:
 					#if UNITS_TYPE == MILES
-					ui16_display_data = (uint16_t) ui16_display_data_factor / (ui8_pedal_cadence_RPM * 10);
+					ui16_display_data = (uint16_t) ui16_display_data_factor / (ui8_pedal_cadence_RPM * (uint8_t)10);
 					#else
 					if (ui8_pedal_cadence_RPM > 99) {
 						ui16_display_data = (uint16_t) ui16_display_data_factor / cadence_from_motor_erps;
@@ -3234,7 +3234,7 @@ static void uart_send_package(void)
 					ui16_display_data = (uint16_t) ui16_display_data_factor / ui16_motor_speed_erps;
 				  break;
 				case 12:
-					ui16_duty_cycle_percent = (uint16_t) ((ui8_g_duty_cycle * 100) / PWM_DUTY_CYCLE_MAX) - 1;
+					ui16_duty_cycle_percent = (uint16_t) ((ui8_g_duty_cycle * (uint8_t)100) / PWM_DUTY_CYCLE_MAX) - 1;
 					ui16_display_data = (uint16_t) ui16_display_data_factor / (ui16_duty_cycle_percent * 10);
 				  break;
 				case 13:
