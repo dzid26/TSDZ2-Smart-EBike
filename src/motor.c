@@ -364,7 +364,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER) {
 		else {
             // Verify if rotor stopped (< 10 ERPS)
             // ui16_a - ui16_b = Hall counter ticks from the last Hall sensor transition;
-            if ((ui16_a - ui16_b) > (HALL_COUNTER_FREQ/MOTOR_ROTOR_INTERPOLATION_MIN_ERPS/6)) {
+            if ((uint16_t)(ui16_a - ui16_b) > (HALL_COUNTER_FREQ/MOTOR_ROTOR_INTERPOLATION_MIN_ERPS/6U)) {
                 ui8_motor_commutation_type = BLOCK_COMMUTATION;
                 ui8_g_foc_angle = 0;
                 ui8_hall_360_ref_valid = 0;
@@ -563,7 +563,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER) {
         */
 
             ld a, _ui8_temp+0     // ui8_svm_table_index is stored in ui8_temp
-            add a, #0x55        // ui8_temp = ui8_svm_table[(uint8_t) (ui8_svm_table_index + 85 /* 120ยบ */)];
+            add a, #0x55        // ui8_temp = ui8_svm_table[(uint8_t) (ui8_svm_table_index + 85); /* 120deg */];
             clrw x
             ld  xl, a
             ld  a, (_ui8_svm_table+0, x)
@@ -1023,7 +1023,6 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER) {
 	}
 	
     /****************************************************************************/
-    irq_end:
     // clears the TIM1 interrupt TIM1_IT_UPDATE pending bit
     TIM1->SR1 = (uint8_t) (~(uint8_t) TIM1_IT_CC4);
 }

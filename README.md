@@ -1,4 +1,4 @@
-[![Build Action](../../actions/workflows/build.yaml/badge.svg)](../../actions/workflows/build.yaml)
+![GitHub issues](https://img.shields.io/github/issues/emmebrusa/TSDZ2-Smart-EBike-1) [![Build Action](../../actions/workflows/build.yaml/badge.svg)](../../actions/workflows/build.yaml)
 
 This repository is updated by mbrusa.
 
@@ -53,6 +53,28 @@ This project is being developed and maintained for free by a community of users.
  - install [cpptools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)
  - press F5 in VScode to build, flash, and debug (`STM8-gdb` profile)
 
+## Testing
+### Setup
+Initialize virtual environment (optional)::
+
+`py -m venv .venv`
+
+Enable virtual environment or let VScode to do it automatically:
+
+`.venv\Scripts\activate` or `source .venv\Scripts\activate`
+
+Install dependencies:
+
+`pip install .`
+
+### Usage
+
+Run tests:
+
+`pytest`
+
+Calculate coverage and generate html report (probably will not work on Windows):
+`pytest --coverage`
 
 
 ### Compile the firmware manually
