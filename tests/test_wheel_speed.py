@@ -1,4 +1,5 @@
 import pytest
+from hypothesis import given, assume, strategies as st
 from sim._tsdz2 import ffi, lib as ebike # module generated from c-code
 
 
@@ -7,6 +8,10 @@ from sim._tsdz2 import ffi, lib as ebike # module generated from c-code
 def setup_ebike():
     # Set up initial values before each test
     ebike.m_configuration_variables.ui16_wheel_perimeter = 2070
+
+    # for oem wheel speed
+    ebike.ui8_display_ready_flag = 1
+
     yield
     # Teardown after each test (optional)
     ebike.ui16_wheel_speed_sensor_ticks = 0
@@ -70,7 +75,7 @@ def test_wheel_speed_calculation_precision_parametrized(wheel_size):
         ebike.calc_wheel_speed()
         result = ebike.ui16_wheel_speed_x10 / 10
         expected = wheel_speed_calc_float(ui16_wheel_perimeter, ticks)
-        assert result == pytest.approx(expected, rel=0.1, abs=0.1), (
+        assert result == pytest.approx(expected, rel=1e-1, abs=0.1), (
             f"Test failed for wheel size {wheel_size} (perimeter {ui16_wheel_perimeter}) and tick count {ticks}! "
             f"Expected {expected:.2f}, got {result:.2f}"
         )
@@ -79,6 +84,26 @@ def test_wheel_speed_calculation_precision_parametrized(wheel_size):
     print(f"Biggest error: {max(error.values())}")
     print(f"Average error: {sum(error.values()) / len(error)}")
 
+
+OEM_WHEEL_SPEED_DIVISOR = 384
+
+@given(
+	ticks=st.integers(min_value=85, max_value=65535), #14in wheel min tics
+	wheel_size=st.integers(min_value=10, max_value=32) # 10 to 32inch
+    )
+def test_calc_oem_wheel_speed(ticks, wheel_size):
+    ebike.ui8_oem_wheel_diameter = wheel_size
+    ebike.ui16_wheel_speed_sensor_ticks = ticks
+    ui16_wheel_perimeter = int(wheel_inch_to_mm_circumference(wheel_size)) 
+    ebike.m_configuration_variables.ui16_wheel_perimeter = ui16_wheel_perimeter
+    expected = wheel_size * 80 * 10 * ticks / (ebike.m_configuration_variables.ui16_wheel_perimeter * OEM_WHEEL_SPEED_DIVISOR)
+    ebike.calc_oem_wheel_speed()
+    result = ebike.ui16_oem_wheel_speed_time
+
+    assert result == pytest.approx(expected, rel=1e-1, abs=1), (
+            f"Test failed for wheel size {wheel_size} (perimeter {ui16_wheel_perimeter}) and tick count {ticks}! "
+            f"Expected {expected:.2f}, got {result}"
+    )
 
 # Run the tests
 if __name__ == '__main__':
