@@ -3342,19 +3342,18 @@ static void uart_send_package(void)
 	
 static void calc_oem_wheel_speed(void) {
 	if (ui8_display_ready_flag) {
-		uint32_t ui32_oem_wheel_speed_time;
-		uint32_t ui32_oem_wheel_perimeter;
-			
 		// calc oem wheel speed (wheel turning time)
-		ui32_oem_wheel_speed_time = ((uint32_t) ui16_wheel_speed_sensor_ticks * 10) / OEM_WHEEL_SPEED_DIVISOR;
-		
-		// speed conversion for different perimeter			
-		ui32_oem_wheel_perimeter = ((uint32_t) ui8_oem_wheel_diameter * 7975) / 100; // 25.4 * 3.14 * 100 = 7975
-		ui32_oem_wheel_speed_time *= ui32_oem_wheel_perimeter;
-		ui32_oem_wheel_speed_time /= (uint32_t) m_configuration_variables.ui16_wheel_perimeter;
-		
-		// oem wheel speed (wheel turning time)
-		ui16_oem_wheel_speed_time = (uint16_t) ui32_oem_wheel_speed_time;
+		if (ui16_wheel_speed_sensor_ticks > 0U) {
+			uint16_t ui16_oem_wheel_tick_time = (uint16_t)(((uint32_t) ui16_wheel_speed_sensor_ticks * 10U) / OEM_WHEEL_SPEED_DIVISOR);
+
+			// speed conversion for different perimeter		
+			uint16_t ui16_oem_wheel_perimeter = (uint16_t)(ui8_oem_wheel_diameter * (uint8_t)80U); // 25.4 * 3.1415 = 79.8 = 80
+
+			// oem wheel speed (wheel turning time) ms/2
+			ui16_oem_wheel_speed_time = (uint16_t)((uint32_t)ui16_oem_wheel_tick_time * ui16_oem_wheel_perimeter / m_configuration_variables.ui16_wheel_perimeter);
+		} else {
+			ui16_oem_wheel_speed_time = 0;
+		}
 	}
 	
 	#if ENABLE_ODOMETER_COMPENSATION
