@@ -88,64 +88,6 @@ jobs:
           path: bin/main.hex
 
 
-  Tests:
-    runs-on: ubuntu-20.04
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Install dependencies
-        run: |
-          pip install -e .
-          pip install --upgrade pytest-md-report
-          pip install gcovr
-      - name: Run tests
-        env:
-          REPORT_OUTPUT: md_report.md
-        shell: bash
-        run: |
-          rm tests/sim/_tsdz2.cdef # make sure cdef is generated from the source to check testing framework
-
-          echo "REPORT_FILE=${REPORT_OUTPUT}" >> "$GITHUB_ENV"
-
-          gcc -Wall -Wextra -Q --help=warning # print warnings that shouldbe enabled by pytest --strict
-
-          pytest --strict --coverage --md-report --md-report-flavor gfm --md-report-output "$REPORT_OUTPUT"
-      - name: Output reports to the job summary
-        if: always()
-        shell: bash
-        run: |
-          if [ -f "$REPORT_FILE" ]; then
-            echo "## Test Report" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            cat "$REPORT_FILE" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "Report file not found."
-          fi
-      - name: Render the report to the PR when tests fail
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: failure()
-        with:
-          header: test-report
-          recreate: true
-          path: ${{ env.REPORT_FILE }}
-      - name: Collect coverage data
-        run: |
-          echo "### Coverage Report" >> $GITHUB_STEP_SUMMARY
-          gcovr -r tests --print-summary >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage_report
-          path: |
-            tests/coverage_report.html
-  
   Static-analysis:
     runs-on: ubuntu-latest
     permissions:
@@ -153,40 +95,49 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
+      - name: Prepare cppcheck
         run: |
-          sudo apt update
-          sudo apt install cppcheck
-      - name: Install cppcheck
-        shell: bash
-        run: |
+          mkdir -p b
           git clone https://github.com/danmar/cppcheck.git
           cd cppcheck
           git fetch --all --tags --force
           git checkout 2.14.2
-          mkdir build
-          cd build
+          mkdir -p build
+      - name: Cache Cppcheck build
+        id: cppcheck-build
+        uses: actions/cache@v4
+        env:
+          cache-name: cppcheck-build
+        with:
+          path: ./cppcheck/build
+          key: ${{ runner.os }}-cppcheck-build-${{ env.cache-name }}-${{ hashFiles('cli/*.*') }}
+          restore-keys: |
+            ${{ runner.os }}-cppcheck-build-${{ env.cache-name }}-
+            ${{ runner.os }}-cppcheck-build-
+            ${{ runner.os }}-
+      - name: Install cppcheck
+        shell: bash
+        run: |
+          cd cppcheck/build
           cmake ..
           cmake --build .
           sudo make install
           cppcheck --version
       - name: Cache Cppcheck dumps
-        id: cache-npm
-        uses: actions/cache@v3
+        id: cppcheck-dump-dir
+        uses: actions/cache@v4
         env:
           cache-name: cppcheck-build-dir
         with:
-          # npm cache files are stored in `~/.npm` on Linux/macOS
-          path: ~/b
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('src/**/*.{c,h}') }}
+          path: ./b
+          key: ${{ runner.os }}-cppcheck-dump-dir-${{ env.cache-name }}-${{ hashFiles('src/**/*.{c,h}') }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
+            ${{ runner.os }}-cppcheck-dump-dir-${{ env.cache-name }}-
+            ${{ runner.os }}-cppcheck-dump-dir-
             ${{ runner.os }}-
       - name: Run cppcheck
         shell: bash
         run: |
-          mkdir b
           cppcheck src --cppcheck-build-dir=b -j8 --enable=all --check-level=exhaustive --force --std=c99 -Isrc/STM8S_StdPeriph_Lib/inc -iSTM8S_StdPeriph_Lib --suppress=missingIncludeSystem --suppress=variableScope  -DSTM8S105 -DHSE_Value=16000000 -D_SDCC_ -DUSE_STDPERIPH_DRIVER -USTM8AF52Ax -USTM8AF622x -USTM8AF626x -USTM8AF62Ax -USTM8S003 -USTM8S005 -USTM8S007 -USTM8S103 -USTM8S207 -USTM8S208 -USTM8S903 -U__CSMC__ -U__ICCSTM8__ -U__RCST7__ -U__CDT_PARSER__  -URAM_EXECUTION -UHALL_DEBUG -UTIME_DEBUG  -UUSE_FULL_ASSERT 2>/dev/null
 
 

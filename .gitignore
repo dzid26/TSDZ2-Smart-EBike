@@ -10,6 +10,8 @@ tools/Java_Configurator_Source/
 *.elf
 *.dump
 *.ctu-info
+*.dump
+*.ctu-info
 src/Result.log
 bin/
 Debug/
