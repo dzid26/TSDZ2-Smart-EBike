@@ -58,7 +58,6 @@ volatile uint8_t ui8_controller_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE
 volatile uint8_t ui8_controller_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
 volatile uint16_t ui16_adc_voltage_cut_off = 0xffff;
 volatile uint8_t ui8_adc_battery_current_filtered = 0;
-volatile uint8_t *ui8_adc_battery_current = (uint8_t*) 0x53EA;
 volatile uint8_t ui8_controller_adc_battery_current_target = 0;
 volatile uint8_t ui8_g_duty_cycle = 0;
 volatile uint8_t ui8_controller_duty_cycle_target = 0;
