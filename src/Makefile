@@ -65,7 +65,7 @@ ebike_app.h pins.h eeprom.h lights.h config.h
 RELS = $(addprefix $(ODIR)/,$(notdir $(EXTRASRCS:.c=.rel)))
 
 override INCLUDES += -I$(IDIR) -I.
-override CFLAGS += -m$(PLATFORM) -D$(DEVICE) -Ddouble=float --std-c99 --nolospre --opt-code-speed --peep-asm --peep-file peep.txt
+override CFLAGS += -m$(PLATFORM) -D$(DEVICE) -Ddouble=float --std-c23 --nolospre --opt-code-speed --peep-asm --peep-file peep.txt
 override DEBUG_FLAGS += --out-fmt-elf --debug
 LIBS = 
 
