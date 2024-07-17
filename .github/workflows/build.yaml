@@ -65,6 +65,63 @@ jobs:
           path: bin/main.hex
 
 
+  Static-analysis:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare cppcheck
+        run: |
+          mkdir -p b
+          git clone https://github.com/danmar/cppcheck.git
+          cd cppcheck
+          git fetch --all --tags --force
+          git checkout 2.14.2
+          mkdir -p build
+      - name: Cache Cppcheck build
+        id: cppcheck-build
+        uses: actions/cache@v4
+        env:
+          cache-name: cppcheck-build
+        with:
+          path: ./cppcheck/build
+          key: ${{ runner.os }}-cppcheck-build-${{ env.cache-name }}-${{ hashFiles('cli/*.*') }}
+          restore-keys: |
+            ${{ runner.os }}-cppcheck-build-${{ env.cache-name }}-
+            ${{ runner.os }}-cppcheck-build-
+            ${{ runner.os }}-
+      - name: Install cppcheck
+        shell: bash
+        run: |
+          cd cppcheck/build
+          export MAKEFLAGS=-j$(nproc)
+          cmake ..
+          cmake -DUSE_MATCHCOMPILER=ON ..
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build . --parallel 8
+          sudo make install
+          cppcheck --version
+      - name: Cache Cppcheck dumps
+        id: cppcheck-dump-dir
+        uses: actions/cache@v4
+        env:
+          cache-name: cppcheck-build-dir
+        with:
+          path: ./b
+          key: ${{ runner.os }}-cppcheck-dump-dir-${{ env.cache-name }}-${{ hashFiles('src/**/*.{c,h}') }}
+          restore-keys: |
+            ${{ runner.os }}-cppcheck-dump-dir-${{ env.cache-name }}-
+            ${{ runner.os }}-cppcheck-dump-dir-
+            ${{ runner.os }}-
+      - name: Run cppcheck
+        shell: bash
+        run: |
+          cppcheck src --cppcheck-build-dir=b -j8 --enable=all --check-level=exhaustive --force --std=c99 -Isrc/STM8S_StdPeriph_Lib/inc -iSTM8S_StdPeriph_Lib --suppress=missingIncludeSystem --suppress=variableScope  -DSTM8S105 -DHSE_Value=16000000 -D_SDCC_ -DUSE_STDPERIPH_DRIVER -USTM8AF52Ax -USTM8AF622x -USTM8AF626x -USTM8AF62Ax -USTM8S003 -USTM8S005 -USTM8S007 -USTM8S103 -USTM8S207 -USTM8S208 -USTM8S903 -U__CSMC__ -U__ICCSTM8__ -U__RCST7__ -U__CDT_PARSER__  -URAM_EXECUTION -UHALL_DEBUG -UTIME_DEBUG  -UUSE_FULL_ASSERT 2>/dev/null
+
+
+
   Compare_builds:
     needs: [Build_Windows, Build_Linux]
     runs-on: ubuntu-22.04

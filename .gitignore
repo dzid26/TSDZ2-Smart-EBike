@@ -1,12 +1,12 @@
-Debug
-
-**/*.launch
-.vscode
+.*
+!.github
 tools/Java_Configurator_Source/
 !tools/Java_Configurator_Source/src
 *.hex
 *.bin
 *.elf
+*.dump
+*.ctu-info
 src/Result.log
 bin/
 experimental settings/
