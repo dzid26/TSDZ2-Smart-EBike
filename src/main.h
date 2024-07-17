@@ -15,6 +15,8 @@
 //#define TIME_DEBUG
 //#define HALL_DEBUG
 
+extern volatile uint8_t u8_isr_load_perc;
+
 //#define FW_VERSION 15 // mspider65
 
 /*---------------------------------------------------------
@@ -37,6 +39,8 @@
 
 // ----------------------------------------------------------------------------------------------------------------
 // ----------------------------------------------------------------------------------------------------------------
+#define F_CPU                                           (HSI_VALUE / 1U)  //cpu frequency, based on HSI clock and 1x prescaler
+
 
 //#define PWM_FREQ										18 // 18 Khz
 #define PWM_FREQ										19 // 19 Khz
@@ -57,7 +61,7 @@
 #define OEM_WHEEL_SPEED_DIVISOR								363 // at 18 KHz
 #endif
 
-#define PWM_CYCLES_SECOND									(16000000/(PWM_COUNTER_MAX*2)) // 55.5us (PWM period) 18 Khz
+#define PWM_CYCLES_SECOND									((uint16_t)(F_CPU / (PWM_COUNTER_MAX*2))) // 55.5us (PWM period) 18 Khz
 
 /*---------------------------------------------------------
  NOTE: regarding duty cycle (PWM) ramping
