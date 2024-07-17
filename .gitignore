@@ -12,6 +12,7 @@ tools/Java_Configurator_Source/
 *.ctu-info
 src/Result.log
 bin/
+Debug/
 experimental settings/
 releases/
 tests/sim/*

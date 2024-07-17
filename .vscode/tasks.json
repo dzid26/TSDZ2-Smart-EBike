@@ -3,7 +3,7 @@
 	"tasks": [
 		{
 			"type": "cppbuild",
-			"label": "SDCC build",
+			"label": "Build",
 			"command": "make",
 			"presentation": {
 				"echo": false,
@@ -28,22 +28,33 @@
 			}
 		},
 		{
+			"type": "cppbuild",
+			"label": "Clean Builds",
+			"command": "make",
+			"args": [
+				"clean"
+			],
+
+			"options": {
+				"cwd": "${workspaceFolder}/src/"
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
 			"type": "process",
 			"label": "Build & Flash",
-			"windows": {
-			  "command": "flash.bat"
-			},
-			"osx": { //untested
-				"command": "make flash",
-			},
-			"linux": { //untested
-				"command": "make flash",
-			},
+			"command": "make",
+			"args": [
+				"flash"
+			],
 			"options": {
 				"cwd": "${workspaceFolder}/src"
 			},
 			"dependsOn": [
-				"SDCC build"
+				"Build"
 			],
 			"presentation": {
 				"echo": false,
@@ -64,16 +75,14 @@
 			"type": "shell",
 			"command": "openocd",
 			"args": [
-				"-f",
-				"interface/stlink-dap.cfg",  //swim is @stlink-dap in openocd > 10.0
-				"-f",
-				"target/stm8s105.cfg"
+				"-f", "interface/stlink-dap.cfg",  //swim is @stlink-dap in openocd > 10.0
+				"-f", "target/stm8s105.cfg"
 			],
 			"problemMatcher": [],
 		},
 
 		{
-			"label": "Flash with OpenOCD",  //actually doesn't seem to flash correctly
+			"label": "Flash with OpenOCD",  //! actually doesn't seem to flash correctly
 			"hide": true,
 			"type": "process",
 			"presentation": {
@@ -93,22 +102,14 @@
 			},
 			"args": [
 				"-d2",
-				"-f",
-				"interface/stlink-dap.cfg",
-				"-f",
-				"target/stm8s105.cfg",
-				"-c",
-				"init",
-				"-c",
-				"reset halt",
-                "-c",
-                "load_image bin/main.hex 0x9000",
-				"-c",
-				"reset",
-				"-c",
-				"exit",
-                // "-c",
-                // "program orig.hex",
+				"-f", "interface/stlink-dap.cfg",
+				"-f", "target/stm8s105.cfg",
+				"-c", "init",
+				"-c", "reset halt",
+                "-c", "load_image bin/main.hex 0x8000",
+				"-c", "reset",
+				"-c", "exit",
+                // "-c", "program orig.hex",
 			],
 			"problemMatcher": [],
 		},
@@ -133,15 +134,11 @@
 				"instanceLimit": 1,
 			},
 			"args": [
-				"interface/stlink-dap.cfg",
-				"-f",
-				"target/stm8s105.cfg",
-				"-c",
-				"init",
-				"-c",
-				"reset",
-				"-c",
-				"exit",
+				"-f", "interface/stlink-dap.cfg",
+				"-f", "target/stm8s105.cfg",
+				"-c", "init",
+				"-c", "reset",
+				"-c", "exit",
 			],
 			"problemMatcher": [],
 		},

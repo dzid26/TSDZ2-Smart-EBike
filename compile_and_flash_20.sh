@@ -15,7 +15,7 @@ make clean || true
 
 # Build firmware
 echo Build started...
-make all
+make
 
 # Save new firmware
 echo Copying firmware to release folder.

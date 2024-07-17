@@ -4,7 +4,7 @@
 #Copyright 2016
 #LICENSE:	GNU-LGPL
 
-.PHONY: all clean mkdir
+.PHONY: all clean mkdir build
 
 #Compiler
 CC = sdcc --verbose
@@ -69,18 +69,16 @@ override CFLAGS += -m$(PLATFORM) -D$(DEVICE) -Ddouble=float --std-c99 --nolospre
 override DEBUG_FLAGS += --out-fmt-elf --debug
 LIBS = 
 
-# This just provides the conventional target name "all"; it is optional
-# Note: I assume you set PNAME via some means not exhibited in your original file
-all: mkdir $(PNAME)
+default: build
+all: build bin
 
-
+build: mkdir $(PNAME)
 # How to build the overall program
 $(PNAME): $(MAINSRC) $(RELS)
 	$(CC) $(INCLUDES) $(CFLAGS) $(DEBUG_FLAGS) $(LIBS) $(MAINSRC) $(RELS) -o$(ODIR)/$(PNAME).elf
 
 # 	$(SIZE) $(PNAME).elf	
 	$(OBJCOPY) -g $(ODIR)/$(PNAME).elf -O ihex $(ODIR)/$(PNAME).hex $(ELF_SECTIONS_TO_REMOVE)
-	cp $(ODIR)/$(PNAME).hex $(ODIR)/../$(PNAME).hex
 
 #Rules for firmware sources
 %.rel: %.c $(HEADERS)
@@ -96,7 +94,7 @@ $(ODIR)/%.rel: $(SDIR)/%.c
 # Necessary because .rel is not one of the standard suffixes.
 .SUFFIXES: .c .rel
 
-bin:
+bin: build
 	$(OBJCOPY) -I ihex $(ODIR)/$(PNAME).hex -O binary $(ODIR)/$(PNAME).bin
 
 backup:
