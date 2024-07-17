@@ -3349,6 +3349,9 @@ static void uart_send_package(void)
 					// battery voltage not filtered x10
 					ui16_display_data = ui16_display_data_factor / (ui16_battery_voltage_filtered_x10);
 				  break;
+				case 14:
+					ui16_display_data = (uint16_t) ui16_display_data_factor / (u8_isr_load_perc * (uint8_t)10U);
+				  break;
 				default:
 				  break;
 			  }

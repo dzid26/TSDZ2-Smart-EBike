@@ -12,9 +12,12 @@
 #include <stdint.h>
 #include "config.h"
 #include "common.h"
+#include "timers.h"
 
 //#define TIME_DEBUG
 //#define HALL_DEBUG
+
+extern volatile uint8_t u8_isr_load_perc;
 
 //#define FW_VERSION 15 // mspider65
 
@@ -34,10 +37,9 @@
 #define PHASE_ROTOR_ANGLE_270 (uint8_t)((uint8_t)192 + MOTOR_ROTOR_OFFSET_ANGLE - (uint8_t)64)
 #define PHASE_ROTOR_ANGLE_330 (uint8_t)((uint8_t)235 + MOTOR_ROTOR_OFFSET_ANGLE - (uint8_t)64)
 
-#define HALL_COUNTER_FREQ                                       250000U // 250KHz or 4us
 
-// ----------------------------------------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------------------------------------
+#define HALL_COUNTER_FREQ                               TIM3_FREQ_HZ // TIM3 is the Hall sensor timebase
+
 
 #ifndef PWM_FREQ
 //#define PWM_FREQ										18 // 18 Khz
@@ -61,7 +63,7 @@
 #define OEM_WHEEL_SPEED_DIVISOR								363 // at 18 KHz
 #endif
 
-#define PWM_CYCLES_SECOND									(16000000/(PWM_COUNTER_MAX*2)) // 55.5us (PWM period) 18 Khz
+#define PWM_CYCLES_SECOND									((uint16_t)(F_CPU / (PWM_COUNTER_MAX*2))) // 55.5us (PWM period) 18 Khz
 
 /*---------------------------------------------------------
  NOTE: regarding duty cycle (PWM) ramping
