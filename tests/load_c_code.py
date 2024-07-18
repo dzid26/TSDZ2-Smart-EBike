@@ -25,7 +25,7 @@ fake_defines = """
 #define __asm__(x)
 #define __trap
 """
-compiler_args = ["-std=c2x", "-Wall", "-Wextra"]
+compiler_args = ["-std=c2x", "-Wall", "-Wextra", "-Wshadow", "-Wpointer-arith", "-Wstrict-prototypes"]
 linker_args = []
 custom_parser = ''  # actually don't use sdcpp as the cdef stdint definitions should match x86 platform
 
