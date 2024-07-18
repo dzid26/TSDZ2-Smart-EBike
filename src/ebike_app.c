@@ -2122,7 +2122,7 @@ void ebike_control_lights(void)
 // This is the interrupt that happens when UART2 receives data. We need it to be the fastest possible and so
 // we do: receive every byte and assembly as a package, finally, signal that we have a package to process (on main slow loop)
 // and disable the interrupt. The interrupt should be enable again on main loop, after the package being processed
-void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER)
+INTERRUPT_HANDLER(UART2_IRQHandler, UART2_IRQHANDLER)
 {
 	// Interrupt is received when Data is received or when overrun occured because UART2_IT_RXNE_OR interrupt is used
 	// test error flags : OverRun, Noise and Framing error flags
