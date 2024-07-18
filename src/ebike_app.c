@@ -158,7 +158,7 @@ static uint32_t ui32_odometer_compensation_mm = ZERO_ODOMETER_COMPENSATION;
 static uint8_t ui8_adc_throttle_assist = 0;
 volatile uint8_t ui8_throttle_adc_in = 0;
 static uint8_t ui8_throttle_mode_array[2] = {THROTTLE_MODE,STREET_MODE_THROTTLE_MODE};
-volatile bool pedals_torque_loaded = false;
+volatile uint8_t pedals_torque_loaded = 0U;
 
 // cruise control
 static uint8_t ui8_cruise_threshold_speed_x10_array[2] = {CRUISE_OFFROAD_THRESHOLD_SPEED_X10,CRUISE_STREET_THRESHOLD_SPEED_X10};

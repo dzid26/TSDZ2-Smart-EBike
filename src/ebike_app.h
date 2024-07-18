@@ -10,7 +10,6 @@
 #define EBIKE_APP_H_
 
 #include <stdint.h>
-#include <stdbool.h>
 
 // startup boost mode
 #define CADENCE						0
@@ -22,7 +21,7 @@ extern volatile uint8_t ui8_system_state;
 
 
 // pedals are loaded
-extern volatile bool pedals_torque_loaded;
+extern volatile uint8_t pedals_torque_loaded;
 
 //throttle is enabled and applied
 extern volatile uint8_t ui8_throttle_adc_in;
