@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 #include "main.h"
-#include "interrupts.h"
+#include "interrupts.h" // interrupt prototypes must be visible in main.c
 #include "stm8s.h"
 #include "uart.h"
 #include "pwm.h"
@@ -51,16 +51,6 @@ int main(void);
 #ifdef __CDT_PARSER__
 #define __interrupt(x)
 #endif
-// PWM cycle interrupt (called every 64us)
-void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER);
-// UART interrupt
-void UART2_IRQHandler(void) __interrupt(UART2_IRQHANDLER);
-// TIM4 Overflow interrupt (called every 1ms)
-void TIM4_IRQHandler(void) __interrupt(TIM4_OVF_IRQHANDLER);
-// Hall Sensor Signal interrupt
-void HALL_SENSOR_A_PORT_IRQHandler(void) __interrupt(EXTI_HALL_A_IRQ);
-void HALL_SENSOR_B_PORT_IRQHandler(void) __interrupt(EXTI_HALL_B_IRQ);
-void HALL_SENSOR_C_PORT_IRQHandler(void) __interrupt(EXTI_HALL_C_IRQ);
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////
