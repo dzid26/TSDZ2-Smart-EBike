@@ -517,4 +517,8 @@ HALL_COUNTER_OFFSET_UP:    29 -> 44
 
 #define ASSISTANCE_WITH_ERROR_ENABLED			0
 
+
+
+static_assert(MOTOR_TYPE == 0 || MOTOR_TYPE == 1);
+
 #endif // MAIN_H_
