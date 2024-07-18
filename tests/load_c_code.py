@@ -25,7 +25,7 @@ fake_defines = """
 #define __asm__(x)
 #define __trap
 """
-compiler_args = ["-std=c99", "-Wall", "-Wextra"]
+compiler_args = ["-std=c2x", "-Wall", "-Wextra"]
 linker_args = []
 custom_parser = ''  # actually don't use sdcpp as the cdef stdint definitions should match x86 platform
 
@@ -117,7 +117,7 @@ class HeaderGenerator(c_generator.CGenerator):
 def generate_cdef(module_name, src_file):
     # exceptions needed on some platforms (mingw)
     skip_extensions = ["__attribute__(x)=", "__extension__=", "__MINGW_EXTENSION="]
-    skip_std_includes = ["_INC_STDIO", "_INC_STDDEF", "__STDDEF_H__", "_MATH_H_", "_INC_CORECRT",]
+    skip_std_includes = ["_INC_STDIO", "_INC_STDDEF", "__STDDEF_H__", "_MATH_H_", "_INC_CORECRT", "static_assert(x)="]
     undef_macros = []
     std_include = []
     if shutil.which(custom_parser):
@@ -126,7 +126,7 @@ def generate_cdef(module_name, src_file):
     else:
         print("Parsing with 'cpp'")
         cpp_path = 'cpp'
-    cpp_args = ["-xc"]
+    cpp_args = ["-xc", "-std=c2x"]
 
     idirs = [r'-I' + d for d in include_dirs + std_include]
     ddefs = [r'-D' + d for d in define_macros + skip_std_includes + skip_extensions]

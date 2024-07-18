@@ -500,4 +500,8 @@ HALL_COUNTER_OFFSET_UP:    29 -> 44
 
 #define AVAIABLE_FOR_FUTURE_USE					0 // EEPROM
 
+
+
+static_assert(MOTOR_TYPE == 0 || MOTOR_TYPE == 1);
+
 #endif // _MAIN_H_
