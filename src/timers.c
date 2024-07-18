@@ -86,7 +86,7 @@ void timer4_init(void) {
 }
 
 // TIM4 Overflow Interrupt handler
-void TIM4_IRQHandler(void) __interrupt(TIM4_OVF_IRQHANDLER) {
+INTERRUPT_HANDLER(TIM4_IRQHandler, TIM4_OVF_IRQHANDLER) {
     ui8_1ms_counter++;
     TIM4->SR1 = 0; // Reset interrupt flag
 }
