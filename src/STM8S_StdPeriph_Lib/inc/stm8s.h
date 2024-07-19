@@ -78,7 +78,6 @@
 /******************************************************************************/
 /*                   Library configuration section                            */
 /******************************************************************************/
-#define SDCC
 
 /* Check the used compiler */
 #if defined(__CSMC__)
@@ -87,10 +86,8 @@
  #define _RAISONANCE_
 #elif defined(__ICCSTM8__)
  #define _IAR_
-#elif defined(SDCC)
+#elif defined(__SDCC)
  #define _SDCC_
-#else
- #error "Unsupported Compiler!"          /* Compiler defines not found */
 #endif
 
 #if !defined  USE_STDPERIPH_DRIVER
@@ -148,11 +145,17 @@
  #define TINY __tiny
  #define EEPROM __eeprom
  #define CONST  const
-#else /*_IAR_*/
+#elif defined(_IAR_)
  #define FAR  __far
  #define NEAR __near
  #define TINY __tiny
  #define EEPROM __eeprom
+ #define CONST  const
+#else 
+ #define FAR
+ #define NEAR
+ #define TINY
+ #define EEPROM
  #define CONST  const
 #endif /* __CSMC__ */
 
@@ -217,9 +220,7 @@
 #define     __O     volatile         /*!< defines 'write only' permissions    */
 #define     __IO    volatile         /*!< defines 'read / write' permissions  */
 
-#if defined(_SDCC_)
-#include <stdint.h>
-#else
+#if defined(_COSMIC_) || defined(_RAISONANCE_) || defined(_IAR_)
 /*!< Signed integer types  */
 typedef   signed char     int8_t;
 typedef   signed short    int16_t;
@@ -229,6 +230,10 @@ typedef   signed long     int32_t;
 typedef unsigned char     uint8_t;
 typedef unsigned short    uint16_t;
 typedef unsigned long     uint32_t;
+#elif defined(_SDCC_)
+#include <stdint.h>
+#else
+#include <stdint.h>
 #endif
 
 /*!< STM8 Standard Peripheral Library old types (maintained for legacy purpose) */
@@ -2742,7 +2747,7 @@ CFG_TypeDef;
  #define trap()                {__asm__("trap\n");} /* Trap (soft IT) */
  #define wfi()                 {__asm__("wfi\n");}  /* Wait For Interrupt */
  #define halt()                {__asm__("halt\n");} /* Halt */
-#else /*_IAR_*/
+#elif defined(_IAR_)
  #include <intrinsics.h>
  #define enableInterrupts()    __enable_interrupt()   /* enable interrupts */
  #define disableInterrupts()   __disable_interrupt()  /* disable interrupts */
@@ -2752,6 +2757,15 @@ CFG_TypeDef;
  #define trap()                __trap()               /* Trap (soft IT) */
  #define wfi()                 __wait_for_interrupt() /* Wait For Interrupt */
  #define halt()                __halt()               /* Halt */
+#else
+ #define enableInterrupts()
+ #define disableInterrupts()
+ #define rim()
+ #define sim()
+ #define nop()
+ #define trap()
+ #define wfi()
+ #define halt()
 #endif /*_RAISONANCE_*/
 
 /*============================== Interrupt vector Handling ========================*/
@@ -2759,19 +2773,13 @@ CFG_TypeDef;
 #ifdef _COSMIC_
  #define INTERRUPT_HANDLER(a,b) @far @interrupt void a(void)
  #define INTERRUPT_HANDLER_TRAP(a) void @far @interrupt a(void)
-#endif /* _COSMIC_ */
-
-#ifdef _RAISONANCE_
+#elif defined(_RAISONANCE_)
  #define INTERRUPT_HANDLER(a,b) void a(void) interrupt b
  #define INTERRUPT_HANDLER_TRAP(a) void a(void) trap
-#endif /* _RAISONANCE_ */
-
-#ifdef _SDCC_
+#elif defined(_SDCC_)
   #define INTERRUPT_HANDLER(a,b) void a(void) __interrupt(b)
   #define INTERRUPT_HANDLER_TRAP(a) void a(void) __trap
-#endif /* _SDCC_ */
-
-#ifdef _IAR_
+#elif defined(_IAR_)
  #define STRINGVECTOR(x) #x
  #define VECTOR_ID(x) STRINGVECTOR( vector = (x) )
  #define INTERRUPT_HANDLER( a, b )  \
@@ -2780,7 +2788,10 @@ CFG_TypeDef;
  #define INTERRUPT_HANDLER_TRAP(a) \
  _Pragma( VECTOR_ID( 1 ) ) \
  __interrupt void (a) (void)
-#endif /* _IAR_ */
+#else
+  #define INTERRUPT_HANDLER(a,b) void a(void)
+  #define INTERRUPT_HANDLER_TRAP(a) void a(void) __builtin_trap
+#endif
 
 /*============================== Interrupt Handler declaration ========================*/
 #ifdef _COSMIC_
