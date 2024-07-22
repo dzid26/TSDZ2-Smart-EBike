@@ -46,7 +46,7 @@ This project is being developed and maintained for free by a community of users.
 2. Install the SDCC compiler
 
 ### Debugging
-- You can do `cd src & make -j4`, import _elf_ into [STMStdudio](https://www.st.com/en/development-tools/stm-studio-stm8.html) and plot global variables in real-time
+- You can do `cd src & make -j3`, import _elf_ into [STMStdudio](https://www.st.com/en/development-tools/stm-studio-stm8.html) and plot global variables in real-time
 - Or use VScode and one of the debugging setups from `.vscode/launch.json`
  1. on Windows, unpack stm8-gdb.exe binary to folder located in your system's PATH environment variable
  2. make sure OpenOCD 0.12 is installed

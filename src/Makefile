@@ -32,6 +32,19 @@ ELF_SECTIONS_TO_REMOVE = -R DATA -R INITIALIZED -R SSEG
 
 # These are the sources that must be compiled to .rel files:
 	EXTRASRCS = \
+	ebike_app.c \
+	common.c \
+	torque_sensor.c \
+	uart.c \
+	pwm.c \
+	motor.c \
+	wheel_speed_sensor.c \
+	brake.c \
+	pas.c \
+	adc.c \
+	timers.c \
+	eeprom.c \
+	lights.c \
 	$(SDIR)/stm8s_iwdg.c \
 	$(SDIR)/stm8s_itc.c \
 	$(SDIR)/stm8s_clk.c \
@@ -44,19 +57,6 @@ ELF_SECTIONS_TO_REMOVE = -R DATA -R INITIALIZED -R SSEG
 	$(SDIR)/stm8s_exti.c \
 	$(SDIR)/stm8s_adc1.c \
 	$(SDIR)/stm8s_flash.c \
-	common.c \
-	torque_sensor.c \
-	uart.c \
-	pwm.c \
-	motor.c \
-	wheel_speed_sensor.c \
-	brake.c \
-	pas.c \
-	adc.c \
-	timers.c \
-	ebike_app.c \
-	eeprom.c \
-	lights.c \
 
 HEADERS = common.h torque_sensor.h interrupts.h main.h uart.h pwm.h motor.h wheel_speed_sensor.h brake.h pas.h adc.h timers.h \
 ebike_app.h pins.h eeprom.h lights.h config.h
