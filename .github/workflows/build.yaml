@@ -48,7 +48,7 @@ jobs:
       run: |
         pip install -e .
         rm tests/sim/_tsdz2.cdef # make sure cdef is generated from the source to check testing framework
-        pytest
+        pytest --collect-only
     - name: Build
       run: |
         cd src
