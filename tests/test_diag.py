@@ -17,11 +17,9 @@ def test_battery_current_max_from_battery_power_max():
     ebike.m_configuration_variables.ui8_battery_current_max = 255 # maxout the other limit so that battery limit is based on the battery power
     ebike.ui16_battery_voltage_filtered_x1000 = 48*1000
     ebike.ebike_app_init()
-    result = [
-        ebike.ui8_adc_battery_current_max_array[0],
-        ebike.ui8_adc_battery_current_max_array[1],
-        ]
-    expected = [57, 57]
+    ebike.uart_receive_package()
+    result = ebike.ui8_adc_battery_current_max
+    expected = 112
     assert result == expected
 
 
