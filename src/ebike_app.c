@@ -104,9 +104,9 @@ static uint16_t ui16_duty_cycle_percent = 0;
 volatile uint8_t ui8_adc_motor_phase_current_max = ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX;
 static uint8_t ui8_error_battery_overcurrent = 0;
 static uint8_t ui8_adc_battery_overcurrent = (uint8_t)(ADC_10_BIT_BATTERY_CURRENT_MAX + ADC_10_BIT_BATTERY_EXTRACURRENT);
-static uint8_t ui8_adc_battery_current_max_array[2];
-static uint8_t ui8_adc_motor_phase_current_max_array[2];
-static uint8_t ui8_adc_battery_overcurrent_array[2];
+static uint8_t ui8_adc_battery_current_max_temp_1 = 0;
+static uint8_t ui8_adc_battery_current_max_temp_2 = 0;
+static uint32_t ui32_adc_battery_power_max_x1000_array[2];
 static uint16_t ui16_motor_bemf_voltage_x1000 = 0;
 static uint16_t smooth_start_duty_cycle_target = 0;
 
@@ -294,13 +294,12 @@ void ebike_app_init(void)
 	
 	
 	// set pedal torque per 10_bit DC_step x100 advanced (calibrated) or default(not calibrated)
+	ui8_pedal_torque_per_10_bit_ADC_step_x100_array[TORQUE_STEP_DEFAULT] = PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100;
 	if (ui8_torque_sensor_calibrated) {
-		ui8_pedal_torque_per_10_bit_ADC_step_x100_array[TORQUE_STEP_DEFAULT] = PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100;
 		ui8_pedal_torque_per_10_bit_ADC_step_x100_array[TORQUE_STEP_ADVANCED] = PEDAL_TORQUE_PER_10_BIT_ADC_STEP_ADV_X100;
 	}
 	else {
-		ui8_pedal_torque_per_10_bit_ADC_step_x100_array[TORQUE_STEP_DEFAULT] = PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100;
-		ui8_pedal_torque_per_10_bit_ADC_step_x100_array[TORQUE_STEP_DEFAULT] = PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100;
+		ui8_pedal_torque_per_10_bit_ADC_step_x100_array[TORQUE_STEP_ADVANCED] = PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100;
 	}
 	
 	// parameters status on startup
@@ -348,52 +347,26 @@ void ebike_app_init(void)
 	#if DATA_DISPLAY_ON_STARTUP
 	ui8_display_data_enabled = 1;
 	#endif
+
+	// calculate max adc battery current from the received battery current limit
+	ui8_adc_battery_current_max_temp_1 = (uint8_t)((uint16_t)(m_configuration_variables.ui8_battery_current_max * 100U)
+		/ BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100);
+
+	// calculate the max adc battery power from the power limit received in offroad mode
+	ui32_adc_battery_power_max_x1000_array[OFFROAD_MODE] = (uint32_t)((uint32_t)TARGET_MAX_BATTERY_POWER * 100U * 1000U)
+		/ BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100;
 	
-	// calculate current limit in offroad and street mode
-	uint8_t ui8_adc_battery_current_max_temp_1;
-	uint8_t ui8_adc_battery_current_max_temp_2;
-	uint32_t ui32_battery_current_max_x100;
-	uint16_t ui16_temp;
-
-	// calculate max battery current in ADC steps from the received battery current limit
-	ui8_adc_battery_current_max_temp_1 = (uint16_t)(m_configuration_variables.ui8_battery_current_max * (uint8_t)100)
-		/ (uint16_t)BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100;
-
-	// calculate max adc battery current from the received power limit in offroad mode
-	ui32_battery_current_max_x100 = (uint32_t)TARGET_MAX_BATTERY_POWER * 100 * 1000	/ ui16_battery_voltage_filtered_x1000;
-	ui8_adc_battery_current_max_temp_2 = ui32_battery_current_max_x100 / BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100;
-
-	// set max battery current in offroad mode
-	ui8_adc_battery_current_max_array[OFFROAD_MODE] = ui8_min(ui8_adc_battery_current_max_temp_1, ui8_adc_battery_current_max_temp_2);
-
-	// calculate max adc battery current from the received power limit in street mode
-	ui32_battery_current_max_x100 = (uint32_t)STREET_MODE_POWER_LIMIT * 100 * 1000 / ui16_battery_voltage_filtered_x1000;
-	ui8_adc_battery_current_max_temp_2 = ui32_battery_current_max_x100 / BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100;
-
-	// set max battery current in street mode
-	ui8_adc_battery_current_max_array[STREET_MODE] = ui8_min(ui8_adc_battery_current_max_temp_1, ui8_adc_battery_current_max_temp_2);
-
-	// set max motor phase current in offroad mode
-	ui16_temp = ui8_adc_battery_current_max_array[OFFROAD_MODE] * ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX;
-	ui8_adc_motor_phase_current_max_array[OFFROAD_MODE] = (uint8_t)(ui16_temp / ADC_10_BIT_BATTERY_CURRENT_MAX);
+	// calculate the max adc battery power from the received power limit in street mode
+	ui32_adc_battery_power_max_x1000_array[STREET_MODE] = (uint32_t)((uint32_t)STREET_MODE_POWER_LIMIT * 100U * 1000U)
+		/ BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100;
+	
+	// set max motor phase current
+	uint16_t ui16_temp = ui8_adc_battery_current_max_temp_1 * ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX;
+	ui8_adc_motor_phase_current_max = (uint8_t)(ui16_temp / ADC_10_BIT_BATTERY_CURRENT_MAX);
 	// limit max motor phase current if higher than configured hardware limit (safety)
-	if (ui8_adc_motor_phase_current_max_array[OFFROAD_MODE] > ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX) {
-		ui8_adc_motor_phase_current_max_array[OFFROAD_MODE] = ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX;
+	if (ui8_adc_motor_phase_current_max > ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX) {
+		ui8_adc_motor_phase_current_max = ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX;
 	}
-
-	// set max motor phase current in street mode
-	ui16_temp = ui8_adc_battery_current_max_array[STREET_MODE] * ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX;
-	ui8_adc_motor_phase_current_max_array[STREET_MODE] = (uint8_t)(ui16_temp / ADC_10_BIT_BATTERY_CURRENT_MAX);
-	// limit max motor phase current if higher than configured hardware limit (safety)
-	if (ui8_adc_motor_phase_current_max_array[STREET_MODE] > ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX) {
-		ui8_adc_motor_phase_current_max_array[STREET_MODE] = ADC_10_BIT_MOTOR_PHASE_CURRENT_MAX;
-	}
-
-	// set battery overcurrent limit in offroad mode
-	ui8_adc_battery_overcurrent_array[OFFROAD_MODE] = ui8_adc_battery_current_max_array[OFFROAD_MODE] + ADC_10_BIT_BATTERY_EXTRACURRENT;
-
-	// set battery overcurrent limit in street mode
-	ui8_adc_battery_overcurrent_array[STREET_MODE] = ui8_adc_battery_current_max_array[STREET_MODE] + ADC_10_BIT_BATTERY_EXTRACURRENT;
 }
 
 
@@ -547,12 +520,15 @@ static void ebike_control_motor(void)
         if (ui8_adc_battery_current_max > ADC_10_BIT_BATTERY_CURRENT_MAX) {
             ui8_adc_battery_current_max = ADC_10_BIT_BATTERY_CURRENT_MAX;
         }
-
+		
+		// set limit battery overcurrent
+		ui8_adc_battery_overcurrent = ui8_adc_battery_current_max + ADC_10_BIT_BATTERY_EXTRACURRENT;
+		
         // limit target current if higher than max value (safety)
         if (ui8_adc_battery_current_target > ui8_adc_battery_current_max) {
             ui8_adc_battery_current_target = ui8_adc_battery_current_max;
         }
-		
+
         // limit target duty cycle ramp up inverse step if lower than min value (safety)
         if (ui8_duty_cycle_ramp_up_inverse_step < PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN) {
             ui8_duty_cycle_ramp_up_inverse_step = PWM_DUTY_CYCLE_RAMP_UP_INVERSE_STEP_MIN;
@@ -1524,8 +1500,9 @@ static void apply_temperature_limiting(void)
 }
 
 
-static void apply_speed_limit(void) {
-    if (m_configuration_variables.ui8_wheel_speed_max > 0U) {
+static void apply_speed_limit(void)
+{
+	if (m_configuration_variables.ui8_wheel_speed_max > 0U) {
 		uint16_t speed_limit_low  = (uint16_t)((uint8_t)(m_configuration_variables.ui8_wheel_speed_max - 2U) * (uint8_t)10U); // casting literal to uint8_t ensures usage of MUL X,A
 		uint16_t speed_limit_high = (uint16_t)((uint8_t)(m_configuration_variables.ui8_wheel_speed_max + 2U) * (uint8_t)10U);
 
@@ -1723,26 +1700,28 @@ static void check_system(void)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // E09 ERROR_MOTOR_CHECK (E08 blinking for XH18)
 // E09 shared with ERROR_WRITE_EEPROM
-#define MOTOR_CHECK_TIME_GOES_ALONE_TRESHOLD         	80 // 80 * 100ms = 8.0 seconds
+#define MOTOR_CHECK_TIME_GOES_ALONE_TRESHOLD         	60 // 60 * 100ms = 6.0 seconds
 #define MOTOR_CHECK_ERPS_THRESHOLD                  	20 // 20 ERPS
 static uint8_t ui8_motor_check_goes_alone_timer = 0U;
 	
 	// riding modes that use the torque sensor
 	if (((m_configuration_variables.ui8_riding_mode == POWER_ASSIST_MODE)
-		||(m_configuration_variables.ui8_riding_mode == TORQUE_ASSIST_MODE)
-		||(m_configuration_variables.ui8_riding_mode == HYBRID_ASSIST_MODE)
-		||(m_configuration_variables.ui8_riding_mode == eMTB_ASSIST_MODE))
-	  && (ui8_adc_throttle_assist == 0U)) {
-		ui8_riding_torque_mode = 1;
-	} else {
+	  ||(m_configuration_variables.ui8_riding_mode == TORQUE_ASSIST_MODE)
+	  ||(m_configuration_variables.ui8_riding_mode == HYBRID_ASSIST_MODE)
+	  ||(m_configuration_variables.ui8_riding_mode == eMTB_ASSIST_MODE))
+		&& (ui8_adc_throttle_assist == 0U)) {
+			ui8_riding_torque_mode = 1;
+	}
+	else {
 		ui8_riding_torque_mode = 0;
 	}
 	// Check if the motor goes alone and with current or duty cycle target = 0 (safety)
 	if ((ui16_motor_speed_erps > MOTOR_CHECK_ERPS_THRESHOLD)
-	  	&&((ui8_riding_torque_mode)	|| (m_configuration_variables.ui8_riding_mode == CADENCE_ASSIST_MODE))
+		&&((ui8_riding_torque_mode) || (m_configuration_variables.ui8_riding_mode == CADENCE_ASSIST_MODE))
 		&& (ui8_adc_battery_current_target == 0U || ui8_duty_cycle_target == 0U)) {
 			ui8_motor_check_goes_alone_timer++;
-	} else {
+	}
+	else {
 		ui8_motor_check_goes_alone_timer = 0;
 	}
 	if (ui8_motor_check_goes_alone_timer > MOTOR_CHECK_TIME_GOES_ALONE_TRESHOLD) {
@@ -2875,12 +2854,12 @@ static void uart_receive_package(void)
 				m_configuration_variables.ui8_wheel_speed_max = ui8_wheel_speed_max_array[m_configuration_variables.ui8_street_mode_enabled];
 			}
 			
+			// current limit with power limit
+			ui8_adc_battery_current_max_temp_2 = (uint8_t)((uint32_t)(ui32_adc_battery_power_max_x1000_array[m_configuration_variables.ui8_street_mode_enabled]
+				/ ui16_battery_voltage_filtered_x1000));
+			
 			// set max battery current
-			ui8_adc_battery_current_max = ui8_adc_battery_current_max_array[m_configuration_variables.ui8_street_mode_enabled];
-			// set max motor phase current
-			ui8_adc_motor_phase_current_max = ui8_adc_motor_phase_current_max_array[m_configuration_variables.ui8_street_mode_enabled];
-			// set limit battery overcurrent
-			ui8_adc_battery_overcurrent = ui8_adc_battery_overcurrent_array[m_configuration_variables.ui8_street_mode_enabled];
+			ui8_adc_battery_current_max = ui8_min(ui8_adc_battery_current_max_temp_1, ui8_adc_battery_current_max_temp_2);
 			
 			// set pedal torque per 10_bit DC_step x100 advanced
 			ui8_pedal_torque_per_10_bit_ADC_step_x100 = ui8_pedal_torque_per_10_bit_ADC_step_x100_array[m_configuration_variables.ui8_torque_sensor_adv_enabled];
@@ -3037,6 +3016,7 @@ static void uart_send_package(void)
 		if ((ui8_display_fault_code != NO_FAULT)&&(ui8_display_function_code == NO_FUNCTION)) {
 			#if ENABLE_XH18
 			if (ui8_display_fault_code == ERROR_WRITE_EEPROM) {
+				// shared with ERROR_MOTOR_CHECK
 				// instead of E09, display blinking E08
 				if (ui8_default_flash_state) {
 					ui8_tx_buffer[5] = 8;

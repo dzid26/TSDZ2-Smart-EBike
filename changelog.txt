@@ -1,6 +1,13 @@
 TSDZ2 Open Source Firmware
 for stock displays XH18 - VLCD5 - VLCD6
 
+List of changes v20.1C.6-beta-1
+  1 - Moved ERROR MOTOR CHECK to E09, shared with ERROR WRITE EEPROM.
+  2 - Fixed power limit issue and others bugs.
+  3 - Debugging workflow (by @dzid26).
+  4 - Motor goes alone fixes (by @dzid26).
+  5 - Cut PWM above speed limit, fixes E09 (by @dzid26).
+
 List of changes v20.1C.6-beta-0
   1 - Updated to v15 version of mspider65 (optimized FOC angle calculation)
   2 - Added "Smooth start" feature for Hybrid, Torque and Cadence mode.

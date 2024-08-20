@@ -800,9 +800,9 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER) {
         // - ramp up/down PWM duty_cycle and/or field weakening angle value
 
         // check if to decrease, increase or maintain duty cycle
-        if ( (ui8_controller_duty_cycle_target < ui8_g_duty_cycle)
+        if ((ui8_controller_duty_cycle_target < ui8_g_duty_cycle)
           || (ui8_controller_adc_battery_current_target < ui8_adc_battery_current_filtered)
-          || (ui8_adc_motor_phase_current > ui8_adc_motor_phase_current_max)
+		  || (ui8_adc_motor_phase_current > ui8_adc_motor_phase_current_max)
           || (ui16_hall_counter_total < (HALL_COUNTER_FREQ / MOTOR_OVER_SPEED_ERPS))
           || (ui16_adc_voltage < ui16_adc_voltage_cut_off)
           || (ui8_brake_state)
@@ -826,7 +826,7 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER) {
         }
 		else if ((ui8_controller_duty_cycle_target > ui8_g_duty_cycle)
           && (ui8_controller_adc_battery_current_target > ui8_adc_battery_current_filtered)) {
-            // reset duty cycle ramp down counter (filter)
+			// reset duty cycle ramp down counter (filter)
             ui8_counter_duty_cycle_ramp_down = 0;
 
             // ramp up duty cycle
