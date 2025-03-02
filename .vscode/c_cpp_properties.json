@@ -10,9 +10,13 @@
                 "__SDCC",
                 "STM8S105",
                 "__interrupt(SDCC_IntelliSense_Hack)=",
-                "__CDT_PARSER__"
+                "__CDT_PARSER__",
+                "USE_FULL_ASSERT"
             ],
-            "cStandard": "c99",
+            "cStandard": "c23",
+            "compilerArgs": [
+                "-std=c++23"
+            ],
             "intelliSenseMode": "gcc-arm"
         }
     ],

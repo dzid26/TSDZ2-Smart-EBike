@@ -108,7 +108,7 @@ extern volatile uint8_t u8_isr_load_perc;
 //Gearing - motor
 /*------------------------------------------------------------------------------
 The secondary has a 93T gear being driven by an 10T, 
-so it is an 9.3:1 reduction (the primary “blue gear” was 4.5:1), 
+so it is an 9.3:1 reduction (the primary "blue gear" was 4.5:1), 
 for a total of 4.5 X 9.3 = 41.85:1
 https://www.electricbike.com/tsdz2-750w-mid-drive-torque-sensing
 ---------------------------------------------------------------------------------*/
@@ -502,6 +502,128 @@ HALL_COUNTER_OFFSET_UP:    29 -> 44
 
 
 
-static_assert(MOTOR_TYPE == 0 || MOTOR_TYPE == 1);
+// *** ASSERT FOR THE AUTO-GENERATED CONFIG.H: ***
+static_assert((MOTOR_TYPE == 0) || (MOTOR_TYPE == 1));// Motor type must be 0 or 1
+static_assert((TORQUE_SENSOR_CALIBRATED == 0) || (TORQUE_SENSOR_CALIBRATED == 1));// Torque sensor must be calibrated (0 or 1)
+static_assert((MOTOR_ACCELERATION > 0) && (MOTOR_ACCELERATION <= 100));   // Motor acceleration must be between 1 and 100
+static_assert(MOTOR_DECELERATION > 0);// Motor deceleration must be greater than 0
+static_assert((MOTOR_ASSISTANCE_WITHOUT_PEDAL_ROTATION == 0) || (MOTOR_ASSISTANCE_WITHOUT_PEDAL_ROTATION == 1));  // Assistance without pedal rotation must be 0 or 1
+static_assert(ASSISTANCE_WITHOUT_PEDAL_ROTATION_THRESHOLD > 0);   // Assistance without pedal rotation threshold must be greater than 0
+static_assert(PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100 > 0); // Pedal torque per 10-bit ADC step must be greater than 0
+static_assert(PEDAL_TORQUE_ADC_MAX > 0);  // Pedal torque ADC max must be greater than 0
+static_assert(STARTUP_BOOST_TORQUE_FACTOR > 0);   // Startup boost torque factor must be greater than 0
+static_assert(MOTOR_BLOCKED_COUNTER_THRESHOLD > 0);   // Motor blocked counter threshold must be greater than 0
+static_assert(MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X10 > 0);   // Motor blocked battery current threshold must be greater than 0
+static_assert(MOTOR_BLOCKED_ERPS_THRESHOLD > 0);  // Motor blocked ERPS threshold must be greater than 0
+static_assert(STARTUP_BOOST_CADENCE_STEP > 0);// Startup boost cadence step must be greater than 0
+static_assert(BATTERY_CURRENT_MAX > 0);   // Battery current max must be greater than 0
+static_assert(TARGET_MAX_BATTERY_POWER > 0);  // Target max battery power must be greater than 0
+static_assert(TARGET_MAX_BATTERY_CAPACITY > 0);   // Target max battery capacity must be greater than 0
+static_assert(BATTERY_CELLS_NUMBER > 0);  // Number of battery cells must be greater than 0
+static_assert(BATTERY_LOW_VOLTAGE_CUT_OFF > 0);   // Battery low voltage cut-off must be greater than 0
+static_assert((ACTUAL_BATTERY_VOLTAGE_PERCENT >= 0) && (ACTUAL_BATTERY_VOLTAGE_PERCENT <= 100));  // Actual battery voltage percent must be between 0 and 100
+static_assert((ACTUAL_BATTERY_CAPACITY_PERCENT >= 0) && (ACTUAL_BATTERY_CAPACITY_PERCENT <= 100));// Actual battery capacity percent must be between 0 and 100
+static_assert((int16_t)(float)(LI_ION_CELL_OVERVOLT * 100.0) > 0);// Li-ion cell overvoltage must be greater than 0
+static_assert((int16_t)(float)(LI_ION_CELL_RESET_SOC_PERCENT * 100.0) > 0);   // Li-ion cell reset SOC percent must be greater than 0
+static_assert((int16_t)(float)(LI_ION_CELL_VOLTS_EMPTY * 100.0) >= 0);// Li-ion cell volts empty must be greater than 0
+static_assert((int16_t)(float)(LI_ION_CELL_VOLTS_FULL * 100.0) > 0);  // Li-ion cell volts full must be greater than 0
+static_assert(WHEEL_PERIMETER > 0);   // Wheel perimeter must be greater than 0
+static_assert(WHEEL_MAX_SPEED > 0);   // Wheel max speed must be greater than 0
+static_assert((ENABLE_LIGHTS == 0) || (ENABLE_LIGHTS == 1));  // Enable lights must be 0 or 1
+static_assert((ENABLE_WALK_ASSIST == 0) || (ENABLE_WALK_ASSIST == 1));// Enable walk assist must be 0 or 1
+static_assert((ENABLE_BRAKE_SENSOR == 0) || (ENABLE_BRAKE_SENSOR == 1));  // Enable brake sensor must be 0 or 1
+static_assert((ENABLE_THROTTLE == 0) || (ENABLE_THROTTLE == 1));  // Enable throttle must be 0 or 1
+static_assert((ENABLE_TEMPERATURE_LIMIT == 0) || (ENABLE_TEMPERATURE_LIMIT == 1));// Enable temperature limit must be 0 or 1
+static_assert((ENABLE_STREET_MODE_ON_STARTUP == 0) || (ENABLE_STREET_MODE_ON_STARTUP == 1));  // Enable street mode on startup must be 0 or 1
+static_assert((ENABLE_SET_PARAMETER_ON_STARTUP == 0) || (ENABLE_SET_PARAMETER_ON_STARTUP == 1));  // Enable set parameter on startup must be 0 or 1
+static_assert((ENABLE_ODOMETER_COMPENSATION == 0) || (ENABLE_ODOMETER_COMPENSATION == 1));// Enable odometer compensation must be 0 or 1
+static_assert((STARTUP_BOOST_ON_STARTUP == 0) || (STARTUP_BOOST_ON_STARTUP == 1));// Startup boost on startup must be 0 or 1
+static_assert((TORQUE_SENSOR_ADV_ON_STARTUP == 0) || (TORQUE_SENSOR_ADV_ON_STARTUP == 1));// Torque sensor advanced on startup must be 0 or 1
+static_assert(LIGHTS_CONFIGURATION_ON_STARTUP >= 0);  // Lights configuration on startup must be non-negative
+static_assert((STREET_MODE_POWER_LIMIT_ENABLED == 0) || (STREET_MODE_POWER_LIMIT_ENABLED == 1));  // Street mode power limit enabled must be 0 or 1
+static_assert(STREET_MODE_POWER_LIMIT > 0);   // Street mode power limit must be greater than 0
+static_assert(STREET_MODE_SPEED_LIMIT > 0);   // Street mode speed limit must be greater than 0
+static_assert(ADC_THROTTLE_MIN_VALUE >= 0);   // ADC throttle min value must be non-negative
+static_assert(ADC_THROTTLE_MAX_VALUE > ADC_THROTTLE_MIN_VALUE);   // ADC throttle max value must be greater than min value
+static_assert(MOTOR_TEMPERATURE_MIN_VALUE_LIMIT < MOTOR_TEMPERATURE_MAX_VALUE_LIMIT); // Motor temperature min limit must be less than max limit
+static_assert((ENABLE_TEMPERATURE_ERROR_MIN_LIMIT == 0) || (ENABLE_TEMPERATURE_ERROR_MIN_LIMIT == 1));// Enable temperature error min limit must be 0 or 1
+static_assert((ENABLE_VLCD6 == 0) || (ENABLE_VLCD6 == 1));// Enable VLCD6 must be 0 or 1
+static_assert((ENABLE_VLCD5 == 0) || (ENABLE_VLCD5 == 1));// Enable VLCD5 must be 0 or 1
+static_assert((ENABLE_XH18 == 0) || (ENABLE_XH18 == 1));  // Enable XH18 must be 0 or 1
+static_assert((ENABLE_DISPLAY_WORKING_FLAG == 0) || (ENABLE_DISPLAY_WORKING_FLAG == 1));  // Enable display working flag must be 0 or 1
+static_assert((ENABLE_DISPLAY_ALWAYS_ON == 0) || (ENABLE_DISPLAY_ALWAYS_ON == 1));// Enable display always on must be 0 or 1
+static_assert((ENABLE_WHEEL_MAX_SPEED_FROM_DISPLAY == 0) || (ENABLE_WHEEL_MAX_SPEED_FROM_DISPLAY == 1));  // Enable wheel max speed from display must be 0 or 1
+static_assert(DELAY_MENU_ON > 0); // Delay menu must be greater than 0
+static_assert((COASTER_BRAKE_ENABLED == 0) || (COASTER_BRAKE_ENABLED == 1));  // Enable coaster brake must be 0 or 1
+static_assert(COASTER_BRAKE_TORQUE_THRESHOLD > 0);// Coaster brake torque threshold must be greater than 0
+static_assert((ENABLE_AUTO_DATA_DISPLAY == 0) || (ENABLE_AUTO_DATA_DISPLAY == 1));// Enable auto data display must be 0 or 1
+static_assert((STARTUP_ASSIST_ENABLED == 0) || (STARTUP_ASSIST_ENABLED == 1));// Startup assist must be 0 or 1
+static_assert(DELAY_DISPLAY_DATA_1 >= 0); // Delay display data 1 must be non-negative
+static_assert(DELAY_DISPLAY_DATA_2 >= 0); // Delay display data 2 must be non-negative
+static_assert(DELAY_DISPLAY_DATA_3 >= 0); // Delay display data 3 must be non-negative
+static_assert(DELAY_DISPLAY_DATA_4 >= 0); // Delay display data 4 must be non-negative
+static_assert(DELAY_DISPLAY_DATA_5 >= 0); // Delay display data 5 must be non-negative
+static_assert(DELAY_DISPLAY_DATA_6 >= 0); // Delay display data 6 must be non-negative
+static_assert(DISPLAY_DATA_1 >= 0);   // Display data 1 must be non-negative
+static_assert(DISPLAY_DATA_2 >= 0);   // Display data 2 must be non-negative
+static_assert(DISPLAY_DATA_3 >= 0);   // Display data 3 must be non-negative
+static_assert(DISPLAY_DATA_4 >= 0);   // Display data 4 must be non-negative
+static_assert(DISPLAY_DATA_5 >= 0);   // Display data 5 must be non-negative
+static_assert(DISPLAY_DATA_6 >= 0);   // Display data 6 must be non-negative
+static_assert(POWER_ASSIST_LEVEL_1 > 0);  // Power assist level 1 must be greater than 0
+static_assert(POWER_ASSIST_LEVEL_2 >= POWER_ASSIST_LEVEL_1);  // Power assist level 2 should be greater than power assist level 1
+static_assert(POWER_ASSIST_LEVEL_3 >= POWER_ASSIST_LEVEL_2);  // Power assist level 3 should be greater than power assist level 2
+static_assert(POWER_ASSIST_LEVEL_4 >= POWER_ASSIST_LEVEL_3);  // Power assist level 4 should be greater than power assist level 3
+static_assert(TORQUE_ASSIST_LEVEL_1 > 0); // Torque assist level 1 should be greater than 0
+static_assert(TORQUE_ASSIST_LEVEL_2 >= TORQUE_ASSIST_LEVEL_1);// Torque assist level 2 should be greater than torque assist level 1
+static_assert(TORQUE_ASSIST_LEVEL_3 >= TORQUE_ASSIST_LEVEL_2);// Torque assist level 3 should be greater than torque assist level 2
+static_assert(TORQUE_ASSIST_LEVEL_4 >= TORQUE_ASSIST_LEVEL_3);// Torque assist level 4 should be greater than torque assist level 3
+static_assert(CADENCE_ASSIST_LEVEL_1 > 0);// Cadence assist level 1 should be greater than 0
+static_assert(CADENCE_ASSIST_LEVEL_2 >= CADENCE_ASSIST_LEVEL_1);  // Cadence assist level 2 should be greater than cadence assist level 1
+static_assert(CADENCE_ASSIST_LEVEL_3 >= CADENCE_ASSIST_LEVEL_2);  // Cadence assist level 3 should be greater than cadence assist level 2
+static_assert(CADENCE_ASSIST_LEVEL_4 >= CADENCE_ASSIST_LEVEL_3);  // Cadence assist level 4 should be greater than cadence assist level 3
+static_assert(EMTB_ASSIST_LEVEL_1 > 0);   // EMTB assist level 1 should be greater than 0
+static_assert(EMTB_ASSIST_LEVEL_2 >= EMTB_ASSIST_LEVEL_1);// EMTB assist level 2 should be greater than EMTB assist level 1
+static_assert(EMTB_ASSIST_LEVEL_3 >= EMTB_ASSIST_LEVEL_2);// EMTB assist level 3 should be greater than EMTB assist level 2
+static_assert(EMTB_ASSIST_LEVEL_4 >= EMTB_ASSIST_LEVEL_3);// EMTB assist level 4 should be greater than EMTB assist level 3
+static_assert(WALK_ASSIST_LEVEL_1 > 0);   // Walk assist level 1 should be greater than 0
+static_assert(WALK_ASSIST_LEVEL_2 >= WALK_ASSIST_LEVEL_1);// Walk assist level 2 should be greater than walk assist level 1
+static_assert(WALK_ASSIST_LEVEL_3 >= WALK_ASSIST_LEVEL_2);// Walk assist level 3 should be greater than walk assist level 2
+static_assert(WALK_ASSIST_LEVEL_4 >= WALK_ASSIST_LEVEL_3);// Walk assist level 4 should be greater than walk assist level 3
+static_assert(WALK_ASSIST_THRESHOLD_SPEED_X10 > 0);   // Walk assist threshold speed must be greater than 0
+static_assert((WALK_ASSIST_DEBOUNCE_ENABLED == 0) || (WALK_ASSIST_DEBOUNCE_ENABLED == 1));// Walk assist debounce enabled must be 0 or 1
+static_assert(WALK_ASSIST_DEBOUNCE_TIME >= 0);// Walk assist debounce time must be non-negative
+static_assert(CRUISE_TARGET_SPEED_LEVEL_1 > 0);   // Cruise target speed level 1 must be greater than 0
+static_assert(CRUISE_TARGET_SPEED_LEVEL_2 >= CRUISE_TARGET_SPEED_LEVEL_1);// Cruise target speed level 2 should be greater than cruise target speed level 1
+static_assert(CRUISE_TARGET_SPEED_LEVEL_3 >= CRUISE_TARGET_SPEED_LEVEL_2);// Cruise target speed level 3 should be greater than cruise target speed level 2
+static_assert(CRUISE_TARGET_SPEED_LEVEL_4 >= CRUISE_TARGET_SPEED_LEVEL_3);// Cruise target speed level 4 should be greater than cruise target speed level 3
+static_assert((CRUISE_MODE_WALK_ENABLED == 0) || (CRUISE_MODE_WALK_ENABLED == 1));// Cruise mode walk enabled must be 0 or 1
+static_assert(CRUISE_THRESHOLD_SPEED > 0);// Cruise threshold speed must be greater than 0
+static_assert(PEDAL_TORQUE_ADC_OFFSET >= 0);  // Pedal torque ADC offset must be non-negative
+static_assert(AUTO_DATA_NUMBER_DISPLAY > 0);  // Auto data number display must be greater than 0
+static_assert((UNITS_TYPE == 0) || (UNITS_TYPE == 1));// Units type must be 0 (kilometers) or 1 (miles)
+static_assert(ASSIST_THROTTLE_MIN_VALUE >= 0);// Assist throttle min value must be non-negative
+static_assert(ASSIST_THROTTLE_MAX_VALUE > ASSIST_THROTTLE_MIN_VALUE); // Assist throttle max value must be greater than min value
+static_assert((STREET_MODE_WALK_ENABLED == 0) || (STREET_MODE_WALK_ENABLED == 1));// Street mode walk enabled must be 0 or 1
+static_assert(DATA_DISPLAY_ON_STARTUP >= 0);  // Data display on startup must be non-negative
+static_assert((FIELD_WEAKENING_ENABLED == 0) || (FIELD_WEAKENING_ENABLED == 1));  // Field weakening enabled must be 0 or 1
+static_assert(PEDAL_TORQUE_ADC_OFFSET_ADJ >= 0);  // Pedal torque ADC offset adjustment must be non-negative
+static_assert(PEDAL_TORQUE_ADC_RANGE_ADJ >= 0);   // Pedal torque ADC range adjustment must be non-negative
+static_assert(PEDAL_TORQUE_ADC_ANGLE_ADJ >= 0);   // Pedal torque ADC angle adjustment must be non-negative
+static_assert(PEDAL_TORQUE_PER_10_BIT_ADC_STEP_ADV_X100 > 0); // Pedal torque per 10-bit ADC step (advanced) must be greater than 0
+static_assert(SOC_PERCENT_CALC >= 0); // SOC percent calculation must be non-negative
+static_assert((STARTUP_BOOST_AT_ZERO == 0) || (STARTUP_BOOST_AT_ZERO == 1));  // Startup boost at zero must be 0 or 1
+static_assert((ENABLEC850 == 0) || (ENABLEC850 == 1));// Enable C850 must be 0 or 1
+static_assert((STREET_MODE_THROTTLE_LEGAL == 0) || (STREET_MODE_THROTTLE_LEGAL == 1));// Street mode throttle legal must be 0 or 1
+static_assert((BRAKE_TEMPERATURE_SWITCH == 0) || (BRAKE_TEMPERATURE_SWITCH == 1));// Brake temperature switch must be 0 or 1
+static_assert((eMTB_BASED_ON_POWER == 0) || (eMTB_BASED_ON_POWER == 1));  // eMTB based on power must be 0 or 1
+static_assert((SMOOTH_START_ENABLED == 0) || (SMOOTH_START_ENABLED == 1));// Smooth start enabled must be 0 or 1
+static_assert((SMOOTH_START_SET_PERCENT >= 0) && (SMOOTH_START_SET_PERCENT <= 100));  // Smooth start set percent must be between 0 and 100
+static_assert(TEMPERATURE_SENSOR_TYPE >= 0);  // Temperature sensor type must be non-negative
+static_assert((CRUISE_MODE_ENABLED == 0) || (CRUISE_MODE_ENABLED == 1));  // Cruise mode enabled must be 0 or 1
+static_assert(THROTTLE_MODE >= 0);// Throttle mode must be non-negative
+static_assert(STREET_MODE_THROTTLE_MODE >= 0);// Street mode throttle mode must be non-negative
+static_assert(ASSIST_LEVEL_1_OF_5_PERCENT > 0);   // Assist level 1 of 5 percent must be greater than 0
+static_assert((ALTERNATIVE_MILES == 0) || (ALTERNATIVE_MILES == 1));  // Alternative miles must be 0 or 1
 
 #endif // _MAIN_H_
