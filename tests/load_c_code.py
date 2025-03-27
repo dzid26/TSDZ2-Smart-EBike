@@ -189,7 +189,7 @@ def load_code(module_name, coverage=False, force_recompile=False, strict=False):
                 extra_compile_args += ["--coverage"]
                 extra_link_args +=    ["--coverage"]
             if strict:
-                extra_compile_args += ["-Werror"]
+                extra_compile_args += ["-Werror", "-Wno-error=unused-variable"]
             # Create a CFFI instance
             ffibuilder = cffi.FFI()
             print("Processing cdefs...")
