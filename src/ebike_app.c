@@ -59,8 +59,8 @@ static uint8_t ui8_display_torque_sensor_flag_2 = 0;
 static uint8_t ui8_display_torque_sensor_value_flag = 0;
 static uint8_t ui8_display_torque_sensor_step_flag = 0;
 static uint8_t ui8_display_function_status[3][5];
-static uint8_t ui8_lights_configuration_2 = LIGHTS_CONFIGURATION_2;
-static uint8_t ui8_lights_configuration_3 = LIGHTS_CONFIGURATION_3;
+static const uint8_t ui8_lights_configuration_2 = LIGHTS_CONFIGURATION_2;
+static const uint8_t ui8_lights_configuration_3 = LIGHTS_CONFIGURATION_3;
 static uint8_t ui8_lights_configuration_temp = LIGHTS_CONFIGURATION_ON_STARTUP;
 
 // system
@@ -1233,7 +1233,7 @@ static void apply_walk_assist(void)
 					ui8_walk_assist_duty_cycle_counter = 0;
 				}
 			}
-			else if (ui16_motor_speed_erps >= ui16_walk_assist_erps_max) {
+			else {
 				ui8_walk_assist_adj_delay = WALK_ASSIST_ADJ_DELAY_MIN;
 			
 				if (ui8_walk_assist_duty_cycle_counter++ > ui8_walk_assist_adj_delay) {
@@ -1537,7 +1537,6 @@ static void get_pedal_torque(void)
 #define TOFFSET_CYCLES 120 // 3sec (25ms*120)
 	
 	static uint8_t toffset_cycle_counter = 0;
-	uint16_t ui16_temp = 0;
 	
     if (toffset_cycle_counter < TOFFSET_CYCLES) {
         uint16_t ui16_tmp = ui16_adc_torque;
@@ -1585,6 +1584,7 @@ static void get_pedal_torque(void)
     if (ui16_adc_pedal_torque > ui16_adc_pedal_torque_offset) {
 		// adc pedal torque delta remapping
 		if ((ui8_torque_sensor_calibrated)&&(m_configuration_variables.ui8_torque_sensor_adv_enabled)) {
+			uint16_t ui16_temp = 0;
 			// adc pedal torque delta adjustment
 			ui16_temp = ui16_adc_pedal_torque - ui16_adc_pedal_torque_offset_init;
 			ui16_adc_pedal_torque_delta = ui16_adc_pedal_torque - ui16_adc_pedal_torque_offset
@@ -2162,13 +2162,13 @@ static void uart_receive_package(void)
 										m_configuration_variables.ui8_startup_boost_enabled = ui8_startup_boost_enabled_temp;
 										ui8_display_function_status[1][ECO] = m_configuration_variables.ui8_startup_boost_enabled;
 									
-										if (ui8_display_torque_sensor_flag_2) { // cppcheck-suppress knownConditionTrueFalse
+										if (ui8_display_torque_sensor_flag_2) {
 											// set display torque sensor step for calibration
 											ui8_display_torque_sensor_step_flag = 1;
 											// delay display torque sensor step for calibration
 											ui8_delay_display_function = DELAY_DISPLAY_TORQUE_CALIBRATION;
 										}
-										else if (ui8_display_torque_sensor_flag_1) { // cppcheck-suppress knownConditionTrueFalse
+										else if (ui8_display_torque_sensor_flag_1) {
 											// restore torque sensor advanced
 											m_configuration_variables.ui8_torque_sensor_adv_enabled = ui8_torque_sensor_adv_enabled_temp;
 											ui8_display_function_status[2][ECO] = m_configuration_variables.ui8_torque_sensor_adv_enabled;
@@ -2185,7 +2185,7 @@ static void uart_receive_package(void)
 							case TURBO:	
 								switch (ui8_menu_index) {
 									case 2:
-										if (ui8_lights_configuration_2 == 9) { // cppcheck-suppress knownConditionTrueFalse
+										if (ui8_lights_configuration_2 == 9) {
 											// restore previous lights configuration
 											m_configuration_variables.ui8_lights_configuration = ui8_lights_configuration_temp;
 											ui8_display_lights_configuration = m_configuration_variables.ui8_lights_configuration;
@@ -2194,7 +2194,7 @@ static void uart_receive_package(void)
 										}
 										break;
 									case 3:
-										if (ui8_lights_configuration_2 == 9) { // cppcheck-suppress knownConditionTrueFalse
+										if (ui8_lights_configuration_2 == 9) {
 											// restore previous assist without pedal rotation
 											m_configuration_variables.ui8_assist_without_pedal_rotation_enabled = ui8_assist_without_pedal_rotation_temp;
 											ui8_display_function_status[1][TURBO] = m_configuration_variables.ui8_assist_without_pedal_rotation_enabled;
@@ -2205,7 +2205,7 @@ static void uart_receive_package(void)
 											ui8_display_lights_configuration = m_configuration_variables.ui8_lights_configuration;
 										}
 										
-										if (ui8_lights_configuration_3 == 10) { // cppcheck-suppress knownConditionTrueFalse
+										if (ui8_lights_configuration_3 == 10) {
 											// display status
 											ui8_display_alternative_lights_configuration = 1;
 										}

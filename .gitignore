@@ -10,6 +10,10 @@ tools/Java_Configurator_Source/
 *.elf
 *.dump
 *.ctu-info
+*.a1
+*.s2
+*.snalyzerinfo
+*.html
 src/Result.log
 bin/
 releases/
