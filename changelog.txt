@@ -6,6 +6,7 @@ List of changes v20.1C.6-update-6
   2 - Added undervoltage error (E01 shared with overvoltage error).
   3 - Increased motor blocked check time (E04).
   4 - Constant power feature in torque-based modes.
+  5 - Fixed variables initialization (2026/05/15).
 
 List of changes v20.1C.6-update-5
   1 - Changed battery capacity SOC% calculation (same as 860C).

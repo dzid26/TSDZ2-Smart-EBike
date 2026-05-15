@@ -99,6 +99,9 @@ static const uint8_t ui8_pas_old_valid_state[4] = { 0x01, 0x03, 0x00, 0x02 };
 // wheel speed sensor
 volatile uint16_t ui16_wheel_speed_sensor_ticks = 0;
 volatile uint16_t ui16_wheel_speed_sensor_ticks_counter_min = 0;
+static uint16_t ui16_wheel_speed_sensor_ticks_counter = 0;
+static uint8_t ui8_wheel_speed_sensor_ticks_counter_started = 0;
+static uint8_t ui8_wheel_speed_sensor_pin_state_old = 0;
 
 // battery soc
 volatile uint8_t ui8_battery_SOC_saved_flag = 0;
@@ -866,11 +869,7 @@ void TIM1_CAP_COM_IRQHandler(void) __interrupt(TIM1_CAP_COM_IRQHANDLER)
 
         /****************************************************************************/
         // Wheel speed sensor detection
-
-        static uint16_t ui16_wheel_speed_sensor_ticks_counter;
-        static uint8_t ui8_wheel_speed_sensor_ticks_counter_started;
-        static uint8_t ui8_wheel_speed_sensor_pin_state_old;
-
+		
         // check wheel speed sensor pin state
         ui8_temp = WHEEL_SPEED_SENSOR__PORT->IDR & WHEEL_SPEED_SENSOR__PIN;
 

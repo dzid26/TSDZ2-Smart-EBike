@@ -58,8 +58,10 @@ static uint8_t ui8_lights_configuration_1 = LIGHTS_CONFIGURATION_1;
 static uint8_t ui8_lights_configuration_2 = LIGHTS_CONFIGURATION_2;
 static uint8_t ui8_lights_configuration_3 = LIGHTS_CONFIGURATION_3;
 static uint8_t ui8_lights_configuration_temp = LIGHTS_CONFIGURATION_ON_STARTUP;
+static uint8_t ui8_lights_counter = 0;
 
 // system
+static uint8_t ui8_counter;
 static uint8_t ui8_riding_mode_parameter = 0;
 volatile uint8_t ui8_system_state = NO_ERROR;
 volatile uint8_t ui8_motor_enabled = 1;
@@ -69,7 +71,17 @@ static uint8_t ui8_lights_button_flag = 0;
 static uint8_t ui8_optional_ADC_function = OPTIONAL_ADC_FUNCTION;
 static uint8_t ui8_walk_assist_level = 0;
 
+// check system
+static uint8_t ui8_riding_torque_mode = 0;
+static uint8_t ui8_motor_check_goes_alone_timer = 0;
+static uint8_t ui8_check_torque_sensor_counter = 0;
+static uint8_t ui8_check_cadence_sensor_counter = 0;
+static uint16_t ui16_check_speed_sensor_counter = 0;
+static uint8_t ui8_motor_blocked_counter = 0;
+static uint8_t ui8_throttle_check_counter = 0;
+
 // battery
+static uint16_t ui16_adc_battery_voltage_accumulated;
 static uint16_t ui16_battery_voltage_calibrated_and_filtered_x10 = 0;
 static uint16_t ui16_battery_power_x10 = 0;															  
 static uint16_t ui16_battery_power_filtered_x10 = 0;
@@ -150,7 +162,10 @@ static uint8_t ui8_pedal_torque_per_10_bit_ADC_step_detected_x100 = 0;
 static uint8_t ui8_pedal_torque_per_10_bit_ADC_step_advanced_x100 = PEDAL_TORQUE_PER_10_BIT_ADC_STEP_ADV_X100;
 static uint8_t ui8_pedal_torque_per_10_bit_ADC_step_x100_array[2];
 static uint8_t ui8_eMTB_based_on_power = eMTB_BASED_ON_POWER;
-
+static uint16_t ui16_pedal_torque_step_temp = 0;
+static uint8_t ui8_step_counter = 0;
+static uint8_t toffset_cycle_counter = 0;
+	
 // wheel speed sensor
 static uint16_t ui16_wheel_speed_x10 = 0;
 static uint8_t ui8_wheel_speed_max = WHEEL_MAX_SPEED;
@@ -172,6 +187,17 @@ static uint8_t ui8_throttle_mode_array[2] = {THROTTLE_MODE,STREET_MODE_THROTTLE_
 // cruise control
 static uint8_t ui8_cruise_threshold_speed_x10_array[2] = {CRUISE_OFFROAD_THRESHOLD_SPEED_X10,CRUISE_STREET_THRESHOLD_SPEED_X10};
 static uint8_t ui8_cruise_button_flag = 0;
+static int16_t i16_error = 0;
+static int16_t i16_last_error = 0;
+static int16_t i16_integral = 0;
+static int16_t i16_derivative = 0;
+static int16_t i16_control_output = 0;
+static uint16_t ui16_wheel_speed_target_x10 = 0;
+static uint8_t ui8_cruise_PID_initialize = 0;
+static uint8_t ui8_cruise_assist_flag = 0;
+static uint8_t ui8_riding_mode_cruise = 0;
+static uint8_t ui8_riding_mode_cruise_temp = 0;
+static uint8_t ui8_cruise_threshold_speed_x10;
 
 // walk assist
 static uint8_t ui8_walk_assist_button_pressed = 0;
@@ -187,6 +213,8 @@ static uint16_t ui16_walk_assist_erps_target = 0;
 static uint16_t ui16_walk_assist_erps_min = 0;
 static uint16_t ui16_walk_assist_erps_max = 0;
 static uint8_t ui8_walk_assist_speed_flag = 0;
+static uint8_t ui8_walk_assist_debounce_flag = 0;
+static uint8_t ui8_walk_assist_debounce_counter = 0;
 
 // startup boost
 static uint8_t ui8_startup_boost_at_zero = STARTUP_BOOST_AT_ZERO;
@@ -204,6 +232,7 @@ static uint8_t ui8_smooth_start_counter_set_temp = SMOOTH_START_RAMP_DEFAULT;
 static uint8_t ui8_startup_assist_enabled_temp = STARTUP_ASSIST_ENABLED;
 static uint8_t ui8_startup_assist_flag = 0;
 static uint8_t ui8_startup_assist_adc_battery_current_target = 0;
+static uint8_t ui8_current_to_compensate_human_power = 0;
 
 // motor temperature control
 static uint16_t ui16_adc_motor_temperature_filtered = 0;
@@ -218,6 +247,7 @@ volatile uint8_t ui8_rx_counter = 0;
 volatile uint8_t ui8_tx_buffer[UART_TX_BUFFER_LEN];
 volatile uint8_t ui8_byte_received;
 volatile uint8_t ui8_state_machine = 0;
+static uint8_t ui8_no_rx_counter = 0;
 
 // uart send
 volatile uint8_t ui8_working_status = 0;
@@ -433,7 +463,6 @@ void ebike_app_controller(void)
 	
 	// send/receive data, ebike control lights, calc oem wheelspeed, 
 	// check system, check battery soc, every 4 cycles (25ms * 4)
-	static uint8_t ui8_counter;
 	
 	switch (ui8_counter++ & 0x03) {
 		case 0: 
@@ -717,8 +746,6 @@ static void apply_smooth_start(void)
 // calculate startup assist current target
 static void apply_startup_assist(void)
 {
-static uint8_t ui8_current_to_compensate_human_power = 0;
-
 	// set startup assist battery current target
 	if (ui8_adc_battery_current_target > ui8_startup_assist_adc_battery_current_target) {
 		ui8_startup_assist_adc_battery_current_target = ui8_adc_battery_current_target;
@@ -1097,18 +1124,6 @@ static void apply_cruise(void)
 #define CRUISE_PID_KI_X16						10
 #define CRUISE_PID_INTEGRAL_LIMIT				1000
 #define CRUISE_PID_OUTPUT_LIMIT					1000
-	static int16_t i16_error;
-	static int16_t i16_last_error;
-	static int16_t i16_integral;
-	static int16_t i16_derivative;
-	static int16_t i16_control_output;
-	static uint16_t ui16_wheel_speed_target_x10;
-	
-	static uint8_t ui8_cruise_PID_initialize = 0;
-	static uint8_t ui8_cruise_assist_flag = 0;
-	static uint8_t ui8_riding_mode_cruise = 0;
-	static uint8_t ui8_riding_mode_cruise_temp = 0;
-	static uint8_t ui8_cruise_threshold_speed_x10;
 	
 #if CRUISE_MODE_ENABLED
 	// set cruise speed threshold
@@ -1367,8 +1382,6 @@ static void apply_torque_sensor_calibration(void)
 {
 #define PEDAL_TORQUE_ADC_STEP_MIN_VALUE		160 //  20 << 3
 #define PEDAL_TORQUE_ADC_STEP_MAX_VALUE		800 // 100 << 3
-	static uint16_t ui16_pedal_torque_step_temp = 0;
-	static uint8_t ui8_step_counter = 0;
 	
 	// exit the calibration procedure
 #if ENABLE_XH18
@@ -1730,8 +1743,6 @@ void get_battery_voltage(void)
      0 equals to no filtering and no delay, higher values
      will increase filtering but will also add a bigger delay.
      ---------------------------------------------------------*/
-
-    static uint16_t ui16_adc_battery_voltage_accumulated;
 	
     // low pass filter the voltage readed value, to avoid possible fast spikes/noise
     ui16_adc_battery_voltage_accumulated -= ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT;
@@ -1744,7 +1755,6 @@ static void get_pedal_torque(void)
 {
 #define TOFFSET_CYCLES 120 // 3sec (25ms*120)
 	
-	static uint8_t toffset_cycle_counter = 0;
 	uint16_t ui16_temp = 0;
 	
     if (toffset_cycle_counter < TOFFSET_CYCLES) {
@@ -1868,8 +1878,6 @@ static void check_system(void)
 // E09 shared with ERROR_WRITE_EEPROM
 #define MOTOR_CHECK_TIME_GOES_ALONE_TRESHOLD         	60 // 60 * 100ms = 6.0 seconds
 #define MOTOR_CHECK_ERPS_THRESHOLD                  	40 // 40 ERPS
-static uint8_t ui8_riding_torque_mode = 0;
-static uint8_t ui8_motor_check_goes_alone_timer = 0U;
 	
 	// riding modes that use the torque sensor
 	if (((m_configuration_variables.ui8_riding_mode == POWER_ASSIST_MODE)
@@ -1898,7 +1906,6 @@ static uint8_t ui8_motor_check_goes_alone_timer = 0U;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // E02 ERROR_TORQUE_SENSOR
 #define CHECK_TORQUE_SENSOR_COUNTER_THRESHOLD          20 // 20 * 100ms = 2 seconds
-	static uint8_t ui8_check_torque_sensor_counter;
 	
     // check torque sensor
     if (ui8_riding_torque_mode) {
@@ -1922,7 +1929,6 @@ static uint8_t ui8_motor_check_goes_alone_timer = 0U;
 // E03 ERROR_CADENCE_SENSOR
 #define CHECK_CADENCE_SENSOR_COUNTER_THRESHOLD          250 // 250 * 100ms = 25 seconds
 #define ADC_TORQUE_SENSOR_DELTA_THRESHOLD				(uint16_t)((ADC_TORQUE_SENSOR_RANGE_TARGET >> 1) + 20)
-	static uint8_t ui8_check_cadence_sensor_counter;
 	
 	// check cadence sensor
 	if ((ui16_adc_pedal_torque_delta_no_boost > ADC_TORQUE_SENSOR_DELTA_THRESHOLD)
@@ -1943,7 +1949,6 @@ static uint8_t ui8_motor_check_goes_alone_timer = 0U;
 // E08 ERROR_SPEED_SENSOR
 #define CHECK_SPEED_SENSOR_COUNTER_THRESHOLD          125 // 125 * 100ms = 12.5 seconds
 #define MOTOR_ERPS_SPEED_THRESHOLD	                  180
-	static uint16_t ui16_check_speed_sensor_counter;
 	
 	// check speed sensor
 	if ((ui16_motor_speed_erps > MOTOR_ERPS_SPEED_THRESHOLD)
@@ -1974,8 +1979,6 @@ static uint8_t ui8_motor_check_goes_alone_timer = 0U;
 #define MOTOR_BLOCKED_COUNTER_THRESHOLD_NEW				20 // 20 * 100ms = 2.0 seconds
 #define MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X10_NEW	30 // 30 = 3.0 amps
 #define MOTOR_BLOCKED_ERPS_THRESHOLD_NEW				20 // 20 ERPS
-
-    static uint8_t ui8_motor_blocked_counter;
 	
     // if battery current is over the current threshold and the motor ERPS is below threshold start setting motor blocked error code
     if ((ui8_battery_current_filtered_x10 > MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X10_NEW)
@@ -1998,8 +2001,6 @@ static uint8_t ui8_motor_check_goes_alone_timer = 0U;
 // E05 ERROR_THROTTLE
 #define THROTTLE_CHECK_COUNTER_THRESHOLD		 20 // 20 * 100ms = 2.0 seconds
 #define ADC_THROTTLE_MIN_VALUE_THRESHOLD		(uint8_t)(ADC_THROTTLE_MIN_VALUE + 5)
-
-    static uint8_t ui8_throttle_check_counter;
 	
 	if (ui8_throttle_check_counter < THROTTLE_CHECK_COUNTER_THRESHOLD) {
 		ui8_throttle_check_counter++;
@@ -2017,6 +2018,9 @@ static uint8_t ui8_motor_check_goes_alone_timer = 0U;
 
 
 static uint8_t ui8_default_flash_state;
+static uint8_t ui8_default_flash_state_counter; // increments every function call -> 100 ms
+static uint8_t ui8_braking_flash_state;
+static uint8_t ui8_braking_flash_state_counter; // increments every function call -> 100 ms
 
 void ebike_control_lights(void)
 {
@@ -2024,14 +2028,7 @@ void ebike_control_lights(void)
 #define DEFAULT_FLASH_OFF_COUNTER_MAX     2
 #define BRAKING_FLASH_ON_COUNTER_MAX      1
 #define BRAKING_FLASH_OFF_COUNTER_MAX     1
-
-    //static uint8_t ui8_default_flash_state;
-    static uint8_t ui8_default_flash_state_counter; // increments every function call -> 100 ms
-    static uint8_t ui8_braking_flash_state;
-    static uint8_t ui8_braking_flash_state_counter; // increments every function call -> 100 ms
-
-    /****************************************************************************/
-
+	
     // increment flash counters
     ++ui8_default_flash_state_counter;
     ++ui8_braking_flash_state_counter;
@@ -2270,12 +2267,8 @@ static void uart_receive_package(void)
 	uint8_t ui8_i;
 	uint8_t ui8_rx_check_code;
 	uint8_t ui8_assist_level_mask;
-	static uint8_t ui8_no_rx_counter = 0;
-	static uint8_t ui8_lights_counter = 0;
 	
 #if WALK_ASSIST_DEBOUNCE_ENABLED && ENABLE_BRAKE_SENSOR
-	static uint8_t ui8_walk_assist_debounce_flag = 0;
-	static uint8_t ui8_walk_assist_debounce_counter = 0;
 	
 	// increment walk assist counter
 	ui8_walk_assist_debounce_counter++;
