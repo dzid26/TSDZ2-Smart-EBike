@@ -116,8 +116,8 @@ class HeaderGenerator(c_generator.CGenerator):
 
 def generate_cdef(module_name, src_file):
     # exceptions needed on some platforms (mingw)
-    skip_extensions = ["__attribute__(x)=", "__extension__=", "__MINGW_EXTENSION="]
-    skip_std_includes = ["_INC_STDIO", "_INC_STDDEF", "__STDDEF_H__", "_MATH_H_", "_INC_CORECRT", "static_assert(x)="]
+    skip_extensions = ["__attribute__(x)=", "__extension__=", "__MINGW_EXTENSION=", "static_assert(x)=", "_Static_assert(x)="]
+    skip_std_includes = ["_INC_STDIO", "_INC_STDDEF", "__STDDEF_H__", "_MATH_H_", "_INC_CORECRT"]
     undef_macros = []
     std_include = []
     if shutil.which(custom_parser):
