@@ -168,6 +168,8 @@ HALL_COUNTER_OFFSET_UP:    29 -> 44
 ****************************************
 */
 
+#define MOTOR_HALL_STATES                       6U      // 6 states per electrical rotation (360°) for BLDC motors
+
 #define HALL_COUNTER_OFFSET_DOWN                (HALL_COUNTER_FREQ/MOTOR_TASK_FREQ/2 + 17)
 #define HALL_COUNTER_OFFSET_UP                  (HALL_COUNTER_OFFSET_DOWN + 21)
 #define FW_HALL_COUNTER_OFFSET_MAX              3 // 3*4=12us max time offset

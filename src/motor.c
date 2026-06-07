@@ -186,10 +186,10 @@ static uint8_t  ui8_hall_sensors_state_last = 7; // Invalid value, force executi
 static uint16_t ui16_hall_60_ref_old;
 
 // Hall Timer counter value calculated for the 6 different Hall transitions intervals
-volatile uint16_t ui16_hall_calib_cnt[6];
+volatile uint16_t ui16_hall_calib_cnt[MOTOR_HALL_STATES];
 
 // phase angle for rotor positions 30, 90, 150, 210, 270, 330 degrees
-volatile uint8_t ui8_hall_ref_angles[6] = {
+volatile uint8_t ui8_hall_ref_angles[MOTOR_HALL_STATES] = {
 		PHASE_ROTOR_ANGLE_30,
 		PHASE_ROTOR_ANGLE_90,
 		PHASE_ROTOR_ANGLE_150,
@@ -198,7 +198,7 @@ volatile uint8_t ui8_hall_ref_angles[6] = {
 		PHASE_ROTOR_ANGLE_330};
 
 // Hall counter offset for states 6,2,3,1,5,4 (value configured from Android App)
-volatile uint8_t ui8_hall_counter_offsets[6] = {
+volatile uint8_t ui8_hall_counter_offsets[MOTOR_HALL_STATES] = {
         HALL_COUNTER_OFFSET_UP,
         HALL_COUNTER_OFFSET_DOWN,
         HALL_COUNTER_OFFSET_UP,
