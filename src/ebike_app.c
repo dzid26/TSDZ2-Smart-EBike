@@ -115,6 +115,7 @@ static uint8_t ui8_adc_battery_current_max_temp_1 = 0;
 static uint8_t ui8_adc_battery_current_max_temp_2 = 0;
 static uint32_t ui32_adc_battery_power_max_x10_array[2];
 static uint16_t ui16_motor_bemf_voltage_x1000 = 0;
+static uint8_t ui8_feedforward_max_duty = 0;
 static uint16_t smooth_start_duty_cycle_target = 0;
 
 // Motor ERPS
@@ -1780,6 +1781,7 @@ static void calc_motor_bemf(void){
 	//the worst case scenario is for 48V motor where max speed before overflow is 
 	//780erps (around 140rpm cadence using 41.8 gearing) - avoided due to MOTOR_OVER_SPEED_ERPS limit
 	ui16_motor_bemf_voltage_x1000 = ui16_motor_speed_erps * K_BEMF_X1000;
+
 	// Predict BEMF voltage for motor at pedals speed - max 133rpm
 	uint16_t pedal_sync_bemf_voltage_x1000 = (uint32_t)K_BEMF_X1000 * MOTOR_GEAR_RATIO_X8 * ui8_pedal_cadence_RPM * MOTOR_POLE_PAIRS / 8U / 60U;
 	uint16_t pedal_sync_bemf_duty = (uint16_t)(((uint32_t)pedal_sync_bemf_voltage_x1000 << PWM_DUTY_CYCLE_BITS) / (uint32_t)ui16_battery_voltage_filtered_x10/100U);
@@ -1790,6 +1792,17 @@ static void calc_motor_bemf(void){
 	} else {
 		ui8_pedal_sync_bemf_duty_target = PWM_DUTY_CYCLE_MAX;
 	}
+
+	// Feedforward overcurrent limit: V_safe = BEMF_motor + I_max * R_motor (mV)
+	// I_max (A) = counts * BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100 / 100
+	// R_motor (Ω) = MOTOR_PHASE_COLD_RESISTANCE_X1000 / 1000
+	// I*R (mV) = counts * 16 * R_x1000 / 100  (the ×1000 for mV cancels /1000 from R)
+	// Uses cold resistance (-40°C) — lower R gives tighter limit so we have a margin even when windings are cold
+	uint32_t ui32_max_torque_voltage_x1000 = (uint32_t)ui8_adc_battery_current_max * BATTERY_CURRENT_PER_10_BIT_ADC_STEP_X100 * MOTOR_PHASE_COLD_RESISTANCE_X1000 / 100U;
+	uint32_t ui32_max_safe_voltage_x1000 = ui16_motor_bemf_voltage_x1000 + ui32_max_torque_voltage_x1000;
+	uint16_t ui16_tmp = (uint16_t)((ui32_max_safe_voltage_x1000 << PWM_DUTY_CYCLE_BITS) / (uint32_t)ui16_battery_voltage_filtered_x10 / 100U);
+	if (ui16_tmp > PWM_DUTY_CYCLE_MAX) {ui8_feedforward_max_duty = PWM_DUTY_CYCLE_MAX;} else {ui8_feedforward_max_duty = (uint8_t)ui16_tmp;	}
+	ui8_pedal_sync_bemf_duty_target = ui8_min(ui8_pedal_sync_bemf_duty_target, ui8_feedforward_max_duty);
 }
 
 

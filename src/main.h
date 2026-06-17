@@ -98,15 +98,28 @@ extern volatile uint8_t u8_isr_load_perc;
 
 //bemf 36V motor = 0.0806 V/(rad/s) = 0.5 V/(rev/s) = 0.0633 V/erps source:  https://avdweb.nl/solar-bike/hub-motor/efficiency-bldc-motor-tongsheng-tsdz2-and-astro-3205-compared
 #define K_BEMF_X1000                                        63U
+#define MOTOR_PHASE_RESISTANCE_20C_X1000                    188U  // 0.188 (assume measured at 20°C)
 
 #else
 // 48 volt motor
 #define FOC_ANGLE_MULTIPLIER								39
 
-//casainho said 48V motor has the same max speed (4000rpm) as 36V motor [with corresponding battery] and 4/3 more windings, so the BEMF factor can be scaled by 4/3:
+//casainho said 48V motor has the same max speed (4000rpm) as 36V motor run at rated voltaegand, which indicates constant widniwngs fill factor, so the BEMF factor and resistance can be scaled by 48/36:
 //bemf 48V motor: 0.0633 * 48/36 = 0.0844 V/erps:
 #define K_BEMF_X1000                                        84U
+#define MOTOR_PHASE_RESISTANCE_20C_X1000                    250U  // 0.188*48/36 = 0.25 ohm
 #endif
+
+// Cold resistance at -40°C for feedforward overcurrent margin
+// Copper: R(T) = R_20°C * (1 + 0.00393 * (T - 20))
+// At -40°C: resistance_cold_factor = 1 - 0.00393 * 60 = 0.7642
+#define COPPER_ALPHA_X1000000          3930UL  // 0.00393 * 1000000
+#define COLD_TEMP_DELTA                 60UL    // |20°C - (-40°C)|
+#define RESISTANCE_COLD_FACTOR_X1000000 \
+    (1000000UL - COPPER_ALPHA_X1000000 * COLD_TEMP_DELTA)
+
+#define MOTOR_PHASE_COLD_RESISTANCE_X1000 \
+    ((uint8_t)(MOTOR_PHASE_RESISTANCE_20C_X1000 * RESISTANCE_COLD_FACTOR_X1000000 / 1000000UL))
 
 //Gearing - motor
 /*------------------------------------------------------------------------------

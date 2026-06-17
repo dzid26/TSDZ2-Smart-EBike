@@ -878,15 +878,16 @@ INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER) {
 			// reset duty cycle ramp down counter (filter)
             ui8_counter_duty_cycle_ramp_down = 0;
 
-            // ramp up duty cycle
+            // reach pedals speed quicker
+            if (ui8_g_duty_cycle < ui8_pedal_sync_bemf_duty_target) {
+                ui8_g_duty_cycle = ui8_pedal_sync_bemf_duty_target;
+            }
+
             if (++ui8_counter_duty_cycle_ramp_up > ui8_controller_duty_cycle_ramp_up_inverse_step) {
                 ui8_counter_duty_cycle_ramp_up = 0;
 
                 // increment duty cycle
-				if (ui8_g_duty_cycle < PWM_DUTY_CYCLE_STARTUP) {
-                    ui8_g_duty_cycle = PWM_DUTY_CYCLE_STARTUP;
-                }	
-                else if (ui8_g_duty_cycle < PWM_DUTY_CYCLE_MAX) {
+                if (ui8_g_duty_cycle < PWM_DUTY_CYCLE_MAX) {
                     ui8_g_duty_cycle++;
                 }
             }
