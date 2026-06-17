@@ -1740,7 +1740,11 @@ static void calc_wheel_speed(void)
 	// rps = MOTOR_TASK_FREQ / ui16_wheel_speed_sensor_ticks (rev/sec)
 	// km/h*10 = rps * ui16_wheel_perimeter * ((3600 / (1000 * 1000)) * 10)
 	// !!!warning if MOTOR_TASK_FREQ may not be a multiple of 1000ave in case the task is interrupted
+	if (ui16_tmp < WHEEL_SPEED_COUNTER_MAX) {
 	ui16_wheel_speed_x10 = (uint16_t)(((uint32_t) m_configuration_variables.ui16_wheel_perimeter * ((MOTOR_TASK_FREQ/1000)*36U)) / ui16_tmp);
+	} else {
+		ui16_wheel_speed_x10 = 0;
+	}
 }
 
 

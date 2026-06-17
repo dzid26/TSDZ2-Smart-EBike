@@ -30,7 +30,7 @@ def test_calc_wheel_speed_simple():
     (5000,  283),
     (10000, 141),
     (20000, 70),
-    (65535, 21)
+    (65535, 0)
 ])
 def test_calc_wheel_speed_with_various_ticks(ticks, expected):
     ebike.ui16_wheel_speed_sensor_ticks = ticks
