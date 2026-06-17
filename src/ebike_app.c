@@ -115,6 +115,7 @@ static uint8_t ui8_adc_battery_overcurrent = (uint8_t)(ADC_10_BIT_BATTERY_CURREN
 static uint8_t ui8_adc_battery_current_max_temp_1 = 0;
 static uint8_t ui8_adc_battery_current_max_temp_2 = 0;
 static uint32_t ui32_adc_battery_power_max_x10_array[2];
+static uint16_t ui16_motor_bemf_voltage_x1000 = 0;
 
 // Motor ERPS
 static uint16_t ui16_motor_speed_erps = 0;
@@ -276,6 +277,7 @@ static void uart_send_package(void);
 // system functions
 static void get_battery_voltage(void);
 static void get_pedal_torque(void);
+static void calc_motor_bemf(void);
 static void calc_wheel_speed(void);
 static void calc_cadence(void);
 
@@ -499,8 +501,9 @@ void ebike_app_controller(void)
 	ebike_calc_us[ui8_case_idx] = ebike_calc_delta[ui8_case_idx] * TIM3_TICK_US;
 	if (ebike_calc_us[ui8_case_idx] > ebike_calc_us_max[ui8_case_idx]) {ebike_calc_us_max[ui8_case_idx] = ebike_calc_us[ui8_case_idx];}
 #endif
-	
-	// get pedal torque
+
+	calc_motor_bemf();
+
 	get_pedal_torque();
 	
 	// use received data and sensor input to control motor
@@ -1766,6 +1769,13 @@ void get_battery_voltage(void)
     ui16_adc_battery_voltage_accumulated += ui16_adc_voltage;
 	ui16_battery_voltage_filtered_x10 = ((ui16_adc_battery_voltage_accumulated >> READ_BATTERY_VOLTAGE_FILTER_COEFFICIENT) * BATTERY_VOLTAGE_PER_10_BIT_ADC_STEP_X1000) / 100;
 }
+
+static void calc_motor_bemf(void){
+	//the worst case scenario is for 48V motor where max speed before overflow is 
+	//780erps (around 140rpm cadence using 41.8 gearing) - avoided due to MOTOR_OVER_SPEED_ERPS limit
+	ui16_motor_bemf_voltage_x1000 = ui16_motor_speed_erps * K_BEMF_X1000;
+}
+
 
 
 static void get_pedal_torque(void)
