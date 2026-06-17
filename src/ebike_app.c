@@ -2047,17 +2047,12 @@ static void check_system(void)
 #define MOTOR_ERPS_SPEED_THRESHOLD	                  180
 	
 	// check speed sensor
-	if ((ui16_motor_speed_erps > MOTOR_ERPS_SPEED_THRESHOLD)
-	  &&(m_configuration_variables.ui8_riding_mode != WALK_ASSIST_MODE)
-	  &&(m_configuration_variables.ui8_riding_mode != CRUISE_MODE)
+	if (ui16_motor_speed_erps > MOTOR_ERPS_SPEED_THRESHOLD
+	  && (ui8_riding_torque_mode == 0U || ui8_pedal_cadence_RPM == 0U) // not (walk/cruise/cadence or rev_matching)
+	  && (ui16_wheel_speed_x10 == 0U)
 	  &&(!ui8_startup_assist_flag)) {
 		ui16_check_speed_sensor_counter++;
-	}
-	else {
-		ui16_check_speed_sensor_counter = 0;
-	}
-	
-	if (ui16_wheel_speed_x10 > 0U) {
+	} else {
 		ui16_check_speed_sensor_counter = 0;
 	}
 	
