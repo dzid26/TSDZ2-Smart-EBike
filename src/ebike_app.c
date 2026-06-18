@@ -438,6 +438,11 @@ void ebike_app_init(void)
 }
 
 
+#ifdef TIME_DEBUG
+static uint16_t ebike_calc_us[4];
+static uint16_t ebike_calc_us_max[4];
+#endif
+
 void ebike_app_controller(void)
 {
 	// calculate motor ERPS
@@ -464,7 +469,14 @@ void ebike_app_controller(void)
 	// send/receive data, ebike control lights, calc oem wheelspeed, 
 	// check system, check battery soc, every 4 cycles (25ms * 4)
 	
-	switch (ui8_counter++ & 0x03) {
+	uint8_t ui8_case_idx = ui8_counter++ & 0x03;
+
+#ifdef TIME_DEBUG
+	uint16_t tim3_prev = TIM3_GetCounter();
+	static uint16_t ebike_calc_delta[4];
+#endif
+
+	switch (ui8_case_idx) {
 		case 0: 
 			uart_receive_package();
 			break;
@@ -481,6 +493,12 @@ void ebike_app_controller(void)
 			check_battery_soc();
 			break;
 	}
+
+#ifdef TIME_DEBUG
+	ebike_calc_delta[ui8_case_idx] = (uint16_t)(TIM3_GetCounter() - tim3_prev);
+	ebike_calc_us[ui8_case_idx] = ebike_calc_delta[ui8_case_idx] * TIM3_TICK_US;
+	if (ebike_calc_us[ui8_case_idx] > ebike_calc_us_max[ui8_case_idx]) {ebike_calc_us_max[ui8_case_idx] = ebike_calc_us[ui8_case_idx];}
+#endif
 	
 	// get pedal torque
 	get_pedal_torque();
