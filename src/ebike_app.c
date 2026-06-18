@@ -3461,11 +3461,8 @@ static void uart_send_package(void)
 		}
 		ui8_tx_buffer[TX_CHECK_CODE] = ui8_tx_check_code;
 
-		// send the full package to UART
-		for(ui8_i = 0; ui8_i < UART_TX_BUFFER_LEN; ui8_i++)
-		{
-			uart_put_char(ui8_tx_buffer[ui8_i]);
-		}
+		// send the full package to UART via interrupt
+		uart2_send_buffer_start();
 	}
 }
 

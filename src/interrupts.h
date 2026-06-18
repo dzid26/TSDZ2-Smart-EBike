@@ -16,12 +16,15 @@
 #define EXTI_HALL_C_IRQ  5              // ITC_IRQ_PORTC - Hall sensor C rise/fall detection
 #define TIM1_CAP_COM_IRQHANDLER 12      // ITC_IRQ_TIM1_CAPCOM - PWM control loop (52us)
 #define TIM4_OVF_IRQHANDLER 23          // ITC_IRQ_TIM4_OVF - TIM 4 overflow: 1ms counter
-#define UART2_IRQHANDLER 21             // UART
+#define UART2_TX_IRQHANDLER 20          // UART2 TX
+#define UART2_IRQHANDLER 21             // UART2 RX
 
 
 // PWM cycle interrupt (called every 64us)
 INTERRUPT_HANDLER(TIM1_CAP_COM_IRQHandler, TIM1_CAP_COM_IRQHANDLER);
-// Display UART interrupt
+// UART2 TX interrupt
+INTERRUPT_HANDLER(UART2_TX_IRQHandler, UART2_TX_IRQHANDLER);
+// UART2 RX interrupt
 INTERRUPT_HANDLER(UART2_IRQHandler, UART2_IRQHANDLER);
 // TIM4 Overflow interrupt (called every 1ms)
 INTERRUPT_HANDLER(TIM4_IRQHandler, TIM4_OVF_IRQHANDLER);
