@@ -53,6 +53,8 @@ jobs:
         pytest --collect-only
     - name: Build
       run: |
+        echo "Adding tools to PATH"
+        $env:PATH = "$pwd\..\tools\cygwin_64\bin;$env:PATH"
         cd src
         make clean
         make OBJCOPY="$pwd\..\tools\cygwin_64\bin\objcopy.exe" CFLAGS=--Werror -j4
