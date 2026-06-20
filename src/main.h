@@ -120,6 +120,7 @@ extern volatile uint8_t u8_isr_load_perc;
 
 // duty cycle
 #define PWM_DUTY_CYCLE_MAX									UINT8_MAX
+#define PWM_DUTY_CYCLE_BITS                                 8U
 #define PWM_DUTY_CYCLE_STARTUP								30    // Initial PWM Duty Cycle at motor startup
 
 // ----------------------------------------------------------------------------------------------------------------
@@ -153,7 +154,7 @@ HALL_COUNTER_OFFSET_UP:    29 -> 44
 #define HALL_COUNTER_OFFSET_UP                  (HALL_COUNTER_OFFSET_DOWN + 21)
 #define FW_HALL_COUNTER_OFFSET_MAX              3 // 3*4=12us max time offset
 
-#define MOTOR_ROTOR_INTERPOLATION_MIN_ERPS      10U
+#define MOTOR_ROTOR_INTERPOLATION_MIN_ERPS      4U // 4 is minimum to turn of interpolation before ui16_hall_counter_total overflows at low speed
  
 // adc torque offset gap value for error
 #define ADC_TORQUE_SENSOR_OFFSET_THRESHOLD		30
@@ -221,10 +222,6 @@ HALL_COUNTER_OFFSET_UP:    29 -> 44
 // torque step mode
 #define TORQUE_STEP_DEFAULT							0 // not calibrated
 #define TORQUE_STEP_ADVANCED						1 // calibrated
-
-// smooth start ramp
-#define SMOOTH_START_RAMP_DEFAULT					165 // 35% (255=0% long ramp)
-#define SMOOTH_START_RAMP_MIN						30
 
 // adc current
 //#define ADC_10_BIT_BATTERY_EXTRACURRENT				38  //  6 amps
