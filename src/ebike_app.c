@@ -123,6 +123,7 @@ static uint16_t ui16_motor_speed_erps = 0;
 
 // cadence sensor
 static uint8_t ui8_pedal_cadence_RPM = 0;
+static uint8_t cadence_from_motor_RPM = 0;
 static uint8_t ui8_motor_deceleration = MOTOR_DECELERATION;
 
 // torque sensor
@@ -281,6 +282,7 @@ static void ebike_control_motor(void);
 static void check_system(void);
 
 static void set_motor_ramp(void);
+static void apply_rev_matching(void);
 static void apply_startup_boost(void);
 static void apply_smooth_start(void);
 static void apply_startup_assist(void);
@@ -544,6 +546,7 @@ static void ebike_control_motor(void)
 	apply_temperature_limiting();
 #endif
 	
+	apply_rev_matching();
     apply_speed_limit();
 	#if SMOOTH_START_ENABLED
 	apply_smooth_start();
@@ -637,7 +640,11 @@ static void ebike_control_motor(void)
 			|| (ui8_battery_SOC_saved_flag)
 			|| ((ui16_motor_speed_erps == 0)
 				&& (ui8_adc_battery_current_target == 0U)
-				&& (ui8_g_duty_cycle == 0U)))) {
+				&& (ui8_g_duty_cycle == 0U)
+	  			&& (ui8_pedal_cadence_RPM == 0U)
+				)
+			)
+		) {
         ui8_motor_enabled = 0;
         motor_disable_pwm();
     }
@@ -816,6 +823,34 @@ static void apply_smooth_start(void){
 	}
 }
 
+static void apply_rev_matching(void){
+	// Revmatching - when cadence > 0, use pedal cadence as a target for motor speed - effectively motor follow pedals
+	if ((ui8_riding_torque_mode == 1U) && (ui8_pedal_cadence_RPM > 0U)) {
+		//accelerate as fast as possible until motor speed is close to pedal speed
+
+
+		uint8_t cadence_motor_pedal_sync_delta = (cadence_from_motor_RPM < ui8_pedal_cadence_RPM) ? (ui8_pedal_cadence_RPM - cadence_from_motor_RPM) : 0U;
+
+		uint8_t pedal_sync_duty_cycle_cmd = map_ui8(cadence_motor_pedal_sync_delta,
+													0U,
+													20U,
+													ui8_pedal_sync_bemf_duty_target,
+													ui8_feedforward_max_duty);
+
+		if (ui8_duty_cycle_target < pedal_sync_duty_cycle_cmd) {
+			ui8_duty_cycle_target = pedal_sync_duty_cycle_cmd;
+		}
+
+		if (ui16_wheel_speed_x10 > 0U) { // this is optional redundancy - cadence based target provides main function and protection 
+			ui8_adc_battery_current_target = map_ui8(cadence_motor_pedal_sync_delta,
+													0U,
+													20U,
+													ui8_adc_battery_current_target,
+													ui8_adc_battery_current_max);
+		}
+	}
+}
+
 
 // calculate startup assist current target
 static void apply_startup_assist(void)
@@ -934,7 +969,7 @@ static void apply_torque_assist(void)
 
         // calculate torque assist target current
         uint16_t ui16_adc_battery_current_target_torque_assist = (ui16_adc_pedal_torque_delta
-                * ui8_torque_assist_factor) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
+                * ui8_torque_assist_factor+TORQUE_ASSIST_FACTOR_DENOMINATOR-1) / TORQUE_ASSIST_FACTOR_DENOMINATOR;
 #if TORQUE_MODES_BASED_ON_POWER
 		ui16_adc_battery_current_target_torque_assist = (ui16_adc_battery_current_target_torque_assist
 			* POWER_BASED_REFERENCE_VOLTAGE_X10)
@@ -1754,9 +1789,11 @@ static void calc_wheel_speed(void)
 	Formula for calculating the cadence in RPM:
 	(1) Cadence in RPM = (60 * MOTOR_TASK_FREQ) / CADENCE_SENSOR_NUMBER_MAGNETS) / ticks
 	-------------------------------------------------------------------------------------------------*/
-static void calc_cadence(void){    // Calculate cadence in RPM 
-	ui8_pedal_cadence_RPM = (uint8_t)(CADENCE_RPM_TICK_NUM / ui16_cadence_sensor_ticks);
-}	
+static void calc_cadence(void){
+	ui8_pedal_cadence_RPM = (uint8_t)(CADENCE_RPM_TICK_NUM / ui16_cadence_sensor_ticks); //cadence rpm from PAS sensor
+	cadence_from_motor_RPM = (uint8_t)((uint16_t)60U * ui16_motor_speed_erps / (MOTOR_POLE_PAIRS * MOTOR_GEAR_RATIO_X8 / 8U)); // cadence rpm from motor speed
+
+}
 
 
 void get_battery_voltage(void)
