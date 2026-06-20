@@ -479,18 +479,18 @@ void ebike_app_controller(void)
 	switch (ui8_case_idx) {
 		case 0: 
 			uart_receive_package();
-			break;
-		case 1:
-			ebike_control_lights();
-			calc_oem_wheel_speed();
 			calc_watt_hours_used();
 			break;
+		case 1:
+			calc_oem_wheel_speed();
+			break;
 		case 2:
-			uart_send_package();
+			check_battery_soc();
 			break;
 		case 3:
 			check_system();
-			check_battery_soc();
+			ebike_control_lights();
+			uart_send_package();
 			break;
 	}
 
