@@ -101,7 +101,7 @@ static uint8_t ui8_duty_cycle_ramp_up_inverse_step_default = PWM_DUTY_CYCLE_RAMP
 static uint8_t ui8_duty_cycle_ramp_down_inverse_step = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
 static uint8_t ui8_duty_cycle_ramp_down_inverse_step_default = PWM_DUTY_CYCLE_RAMP_DOWN_INVERSE_STEP_DEFAULT;
 static uint16_t ui16_battery_voltage_filtered_x10 = 0;
-static uint16_t ui16_battery_pack_resistance_x1000 = BATTERY_PACK_RESISTANCE;
+static const uint16_t ui16_battery_pack_resistance_x1024 = (uint16_t)((uint32_t)BATTERY_PACK_RESISTANCE * 1024U / 1000U);
 static uint8_t ui8_battery_current_filtered_x10 = 0;
 static uint8_t ui8_adc_battery_current_max = ADC_10_BIT_BATTERY_CURRENT_MAX;
 static uint8_t ui8_adc_battery_current_target = 0;
@@ -3545,9 +3545,9 @@ static void check_battery_soc(void)
 	uint16_t ui16_battery_voltage_calibrated_x10;
 	
 	// calculate fluctuate voltage, that depends on the current and battery pack resistance
-	ui16_fluctuate_battery_voltage_x10 = (uint16_t) ((((uint32_t) ui16_battery_pack_resistance_x1000)
+	ui16_fluctuate_battery_voltage_x10 = (uint16_t) ((((uint32_t) ui16_battery_pack_resistance_x1024)
 			* ((uint32_t) ui8_battery_current_filtered_x10))
-			/ ((uint32_t) 1000U));
+			/ ((uint32_t) 1024U));
 	
 	// the fluctuate voltage is added to the battery voltage x10
 	ui16_battery_voltage_x10 = ui16_battery_voltage_filtered_x10 + ui16_fluctuate_battery_voltage_x10;
