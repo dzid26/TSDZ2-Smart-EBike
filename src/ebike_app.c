@@ -1863,10 +1863,10 @@ static void get_pedal_torque(void)
 	
 	// calculate human power x10
 	if ((ui8_torque_sensor_calibrated)&&(m_configuration_variables.ui8_torque_sensor_adv_enabled)) {
-		ui16_human_power_x10 = (uint16_t)(((uint32_t)ui16_adc_pedal_torque_delta * ui8_pedal_torque_per_10_bit_ADC_step_calc_x100 * ui8_pedal_cadence_RPM) / 96);
+		ui16_human_power_x10 = (uint16_t)(((((uint32_t)ui16_adc_pedal_torque_delta * ui8_pedal_torque_per_10_bit_ADC_step_calc_x100 * ui8_pedal_cadence_RPM) >> 5U) * 2698) >> 13U);
 	}
 	else {
-		ui16_human_power_x10 = (uint16_t)(((uint32_t)ui16_adc_pedal_torque_delta * ui8_pedal_torque_per_10_bit_ADC_step_x100 * ui8_pedal_cadence_RPM) / 96); // see note below
+		ui16_human_power_x10 = (uint16_t)(((((uint32_t)ui16_adc_pedal_torque_delta * ui8_pedal_torque_per_10_bit_ADC_step_x100 * ui8_pedal_cadence_RPM) >> 5U) * 2698) >> 13U);
 	}
 	
 	/*------------------------------------------------------------------------
@@ -1877,9 +1877,12 @@ static void get_pedal_torque(void)
     (2) Formula: power = torque * rotations per minute * 2 * pi / 60
     (3) Formula: power = torque * rotations per minute * 0.1047
     (4) Formula: power = torque * 100 * rotations per minute * 0.001047
-    (5) Formula: power = torque * 100 * rotations per minute / 955
-    (6) Formula: power * 10  =  torque * 100 * rotations per minute / 96
-    
+    (5) Formula: power_x10 = 10 * torque * 100 * rotations per minute / 955
+    (6) Formula: power_x10  =  torque * 100 * rotations per minute / 96
+	(7) Formula: power_x10  =  torque * 100 * rotations per minute / 32 / 3
+	(8) Formula: power_x10  =  torque * 100 * rotations per minute / 32 * 2698 / 8192  // avoids __divulong
+	(9) Formula: power_x10  =  (torque * 100 * rotations per minute >> 5) * 2698 >> 13
+
 	------------------------------------------------------------------------*/
 }
 
