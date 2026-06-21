@@ -3530,7 +3530,7 @@ static void calc_watt_hours_used(void)
 	// consumed watt-hours
 	ui32_wh_sum_x10 += ui16_battery_power_x10;
 	// calculate watt-hours X10 since power on
-	ui32_wh_since_power_on_x10 = ui32_wh_sum_x10 / 32400; // 36000 -10% calibration to compensate for battery losses
+	ui32_wh_since_power_on_x10 = ui32_wh_sum_x10 / 32768; // 3600sec/hr x10 -9% calibration to compensate for battery losses - rounded to 2^15
 	// calculate watt-hours X10 since last full charge
 	ui32_wh_x10 = ui32_wh_offset_x10 + ui32_wh_since_power_on_x10;
 }
